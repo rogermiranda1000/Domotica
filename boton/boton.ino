@@ -2,16 +2,25 @@
 #include <PubSubClient.h>
 #include <SPI.h>
 #include <SD.h>
-#include "Secret.h" // save WIFI_NAME & WIFI_PASS here
+#include "Secret.h" // #define WIFI_NAME & WIFI_PASS here
 
 #define DEBUG
+// big brain; cortesia de https://stackoverflow.com/a/5586469/9178470
+#ifdef  DEBUG
+  #define DEBUG_PRINT(str) Serial.print(str)
+  #define DEBUG_PRINTLN(str) Serial.println(str)
+#else
+  #define DEBUG_PRINT(str)
+  #define DEBUG_PRINTLN(str)
+#endif
 
 #define MQTT_SERVER "192.168.1.229"
 #define MQTT_PORT   1883
 #define ID          "btn01"
 #define GROUP       "btn"
 
-#define SD_PIN      4
+#define SD_PIN      D8
+#define FILE_NAME   "credentials.txt"
 
 #define BUTTON_PIN  D2
 
@@ -20,21 +29,15 @@ PubSubClient client(espClient);
 
 void checkConnection() {
   while (!client.connected()) {
-#ifdef DEBUG
-    Serial.print("Conectando...");
-#endif
+    DEBUG_PRINT("Conectando...");
     if (client.connect(ID)) {
-#ifdef DEBUG
-      Serial.println(" Conectado!");
-#endif
+      DEBUG_PRINTLN(" Conectado!");
       client.subscribe(GROUP);
     }
     else {
-#ifdef DEBUG
-      Serial.print("fallo, rc=");
-      Serial.print(client.state());
-      Serial.println(" intentado otra vez en 2 segundos...");
-#endif
+      DEBUG_PRINT("fallo, rc=");
+      DEBUG_PRINT(client.state());
+      DEBUG_PRINTLN(" intentado otra vez en 2 segundos...");
       delay(2000);
     }
   }
@@ -43,7 +46,7 @@ void checkConnection() {
 bool getDataFromSD(String *ssid, String *password) {
   if (!SD.begin(SD_PIN)) return false;
   
-  File myFile = SD.open("send.txt");
+  File myFile = SD.open(FILE_NAME);
   if (myFile == NULL) return false;
   
   byte x = 0;
@@ -69,19 +72,15 @@ void setup() {
   ssid = String(WIFI_NAME);
   password = String(WIFI_PASS);
 #else
-    // no #define; get data from SD
-    if(!getDataFromSD(&ssid, &password)) {
-  #ifdef DEBUG
-    Serial.println("Unable to read SD data");
-  #endif
-      while (true) delay(9999);
-    }
+  // no #define; get data from SD
+  if(!getDataFromSD(&ssid, &password)) {
+    DEBUG_PRINTLN("Unable to read SD data");
+    while (true) delay(9999);
+  }
 #endif
 
-#ifdef DEBUG
-  Serial.println("ssid: " + ssid);
-  Serial.println("pass: " + password);
-#endif
+  DEBUG_PRINTLN("ssid: " + ssid);
+  DEBUG_PRINTLN("pass: " + password);
   client.setServer(MQTT_SERVER, MQTT_PORT);
 }
 
@@ -100,9 +99,7 @@ void loop() {
       if(digitalRead(BUTTON_PIN) == HIGH) return;
     }
 
-#ifdef DEBUG
-    Serial.println("Botón pulsado.");
-#endif
+    DEBUG_PRINTLN("Botón pulsado.");
     client.publish("central", "btn01");
     
     pressed = true;
