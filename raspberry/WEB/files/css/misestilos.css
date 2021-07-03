@@ -1,0 +1,32 @@
+#exterior {
+    margin: auto;
+	width: 95%;
+}
+
+
+#modulos {
+	background-color: #333;
+	color: white;
+    display: inline-block;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+	height: 240px;
+	margin: 1%;
+	width: 46%;
+    border-top: 6px solid #4CAF50;
+    padding: 4px;
+}
+
+@media (max-width: 600px) {
+	#modulos {
+		width: 95%;
+		margin-top: 2%;
+	}
+}
+
+@media (min-width: 600px) {
+	#exterior {
+		display: flex;
+	}
+}
