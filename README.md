@@ -20,7 +20,7 @@ Envia información sobre la temperatura, humedad, nivel de agua, luz, velocidad 
 Requerimientos:
 - [Sparkfun Weather Meter Kit](https://www.sparkfun.com/products/15901)
 - [SparkFun Weather Shield](https://www.sparkfun.com/products/13956)
-- [RJ11 Connector (x2)][https://www.sparkfun.com/products/132]
+- [RJ11 Connector; x2][https://www.sparkfun.com/products/132]
 
 ## Módulo alarma
 Activa/desactiva la alarma. Se puede realizar mediante el keypad o el sensor dactilar.
