@@ -4,7 +4,7 @@ Crea tu propia casa domótica mediante Arduino y Raspberry
 ## SETUP
 - Necesitas poder [cargar código en la placa Lolin NodeMCU](https://www.instructables.com/Get-Started-With-ESP8266-NodeMCU-Lolin-V3/)
 - Para la comunicación MQTT por parte de arduino se usa la [Libreria PubSubClient](https://pubsubclient.knolleary.net/)
-- Se necesita MariaDB (el archivo a ejecutar para cargar la base de datos se encuentra en el Módulo central)
+- Se necesita MariaDB (el archivo a ejecutar para cargar la base de datos se encuentra en el [Módulo central](https://github.com/rogermiranda1000/Domotica#m%C3%B3dulo-central))
 
 ## Módulo botón
 Envia una señal al pulsar el botón.
@@ -14,7 +14,7 @@ Detecta gases tóxicos para humanos. Avisa tanto por el buzzer, incluido en el m
 
 ## Módulo climático simple
 Envia información sobre la temperatura, humedad y luz.
-Para el uso en exteriores se recomiendo al Módulo climático avanzado.
+Para el uso en exteriores se recomienda el [Módulo climático avanzado](https://github.com/rogermiranda1000/Domotica#m%C3%B3dulo-clim%C3%A1tico-avanzado).
 
 ## Módulo climático avanzado
 Envia información sobre la temperatura, humedad, nivel de agua y luz.
