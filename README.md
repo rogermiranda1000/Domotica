@@ -10,6 +10,7 @@ Crea tu propia casa domótica mediante Arduino y Raspberry
 
 ## Módulo botón
 Envia una señal al pulsar el botón.
+Para configurar su acción se ha de ir a Editar>Añadir botón, el nombre ha de ser su ID y el comando la acción que se desea realizar.
 
 ## Módulo seguridad
 Detecta gases tóxicos para humanos. Avisa tanto por el buzzer, incluido en el módulo, como a la central.
