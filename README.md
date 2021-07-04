@@ -3,11 +3,14 @@ Crea tu propia casa domótica mediante Arduino y Raspberry
 
 ## SETUP
 - Necesitas poder [cargar código en la placa Lolin NodeMCU](https://www.instructables.com/Get-Started-With-ESP8266-NodeMCU-Lolin-V3/)
-- Para la comunicación MQTT por parte de arduino se usa la [Libreria PubSubClient](https://pubsubclient.knolleary.net/)
+- Para la comunicación MQTT, arduino necesita [Libreria PubSubClient](https://pubsubclient.knolleary.net/)
+- Para la recepción de MQTT, el módulo central necesita [Mosquitto](https://mosquitto.org/blog/2013/01/mosquitto-debian-repository/)
 - Se necesita MariaDB (el archivo a ejecutar para cargar la base de datos se encuentra en el [Módulo central](https://github.com/rogermiranda1000/Domotica#m%C3%B3dulo-central))
+- El módulo central necesita una IP estática (busca como configurarlo dependiendo de su sistema)
 
 ## Módulo botón
 Envia una señal al pulsar el botón.
+Para configurar su acción se ha de ir a Editar>Añadir botón, el nombre ha de ser su ID y el comando la acción que se desea realizar.
 
 ## Módulo seguridad
 Detecta gases tóxicos para humanos. Avisa tanto por el buzzer, incluido en el módulo, como a la central.

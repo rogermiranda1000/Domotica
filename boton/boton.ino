@@ -1,84 +1,124 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <SPI.h>
 #include <SD.h>
+#include "Secret.h" // #define WIFI_NAME & WIFI_PASS here
 
-String ssid = "";
-String password = "";
-char* mqtt_server = "192.168.1.10";
-char* mqtt_server2 = "192.168.1.229";
-bool dest = false;
+#define DEBUG
+// big brain; cortesia de https://stackoverflow.com/a/5586469/9178470
+#ifdef  DEBUG
+  #define DEBUG_PRINT(str) Serial.print(str)
+  #define DEBUG_PRINTLN(str) Serial.println(str)
+#else
+  #define DEBUG_PRINT(str)
+  #define DEBUG_PRINTLN(str)
+#endif
+
+#define MQTT_SERVER "192.168.1.229"
+#define MQTT_PORT   1883
+#define ID          "btn01"
+#define GROUP       "btn"
+
+#define SD_PIN      D8
+#define FILE_NAME   "credentials.txt"
+
+#define BUTTON_PIN  D2
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-File myFile;
-
-const int btn = D9;
-
-void callback(char* topic, byte* payload, unsigned int length) {}
- 
- 
-void reconnect() {
+void checkConnection() {
   while (!client.connected()) {
-    Serial.print("Conectando...");
-    if (client.connect("btn01")) {
-      Serial.println(" Conectado!");
-      client.subscribe("btn");
-    } else {
-      Serial.print("fallo, rc=");
-      Serial.print(client.state());
-      Serial.println(" intentado otra vez en 2 segundos...");
-      cambiarDestino();
+    DEBUG_PRINT("Conectando...");
+    if (client.connect(ID)) {
+      DEBUG_PRINTLN(" Conectado!");
+      client.subscribe(GROUP);
+    }
+    else {
+      DEBUG_PRINT("fallo, rc=");
+      DEBUG_PRINT(client.state());
+      DEBUG_PRINTLN(" intentado otra vez en 2 segundos...");
       delay(2000);
     }
   }
 }
 
-void cambiarDestino() {
-  dest = !dest;
-  if(dest) client.setServer(mqtt_server, 1883);
-  else client.setServer(mqtt_server2, 1883);
+bool getDataFromSD(String *ssid, String *password) {
+  if (!SD.begin(SD_PIN)) return false;
+  
+  File myFile = SD.open(FILE_NAME);
+  if (myFile == NULL) return false;
+  
+  byte x = 0;
+  while (myFile.available()) {
+    String tmp = myFile.readStringUntil('\n');
+    if(x==0) *ssid = tmp;
+    else if(x==1) *password = tmp;
+
+    x++;
+  }
+  myFile.close();
+  return true;
 }
 
 void setup() {
-  pinMode(btn, INPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+#ifdef DEBUG
   Serial.begin(9600);
+#endif
 
-  if (!SD.begin(4)) {
-    Serial.println("Error en la lectura de la MicroSD.");
+  String ssid, password;
+#if defined(WIFI_NAME) && defined(WIFI_PASS)
+  ssid = String(WIFI_NAME);
+  password = String(WIFI_PASS);
+#else
+  // no #define; get data from SD
+  if(!getDataFromSD(&ssid, &password)) {
+    DEBUG_PRINTLN("Unable to read SD data");
+    while (true) delay(9999);
   }
-  
-  myFile = SD.open("send.txt");
-  if (myFile) {
-    Serial.println("SD:");
-    int x = 0;
-    while (myFile.available()) {
-      String msgo = myFile.readStringUntil('\n');
-      Serial.println(msgo);
-      if(x==0) ssid = msgo;
-      else if(x==1) password = msgo;
+#endif
 
-      x++;
-    }
-    myFile.close();
-  } else {
-    Serial.println("Error en la lectura de la MicroSD.");
+  DEBUG_PRINT("Connecting to " + ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin((const char*) ssid.c_str(), (const char*) password.c_str());
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    DEBUG_PRINT(".");
   }
-
-  Serial.println("ssid: " + ssid);
-  Serial.println("pass: " + password);
-  cambiarDestino();
-  client.setCallback(callback);
+  DEBUG_PRINTLN("");
+  client.setServer(MQTT_SERVER, MQTT_PORT);
 }
 
 void loop() {
-  if (!client.connected()) reconnect();
+  checkConnection();
   client.loop();
 
-  if(digitalRead(btn) == HIGH) {
-      Serial.println("Botón pulsado.");
-      client.publish("central", "btn01");
-      while(digitalRead(btn) != LOW) delay(1);
+  static bool pressed = false;
+  if(!pressed) {
+    // apretar el botón?
+    if (digitalRead(BUTTON_PIN) == HIGH) return; // not pressed
+    
+    // falsa pulsación?
+    unsigned long inicial = millis();
+    while (millis()-inicial <= 17) {
+      if(digitalRead(BUTTON_PIN) == HIGH) return;
+    }
+
+    DEBUG_PRINTLN("Botón pulsado.");
+    client.publish("central", ID " btn " ID); // el botón ID notifica que se ha pulsado, y que realize la acción 'ID'
+    
+    pressed = true;
+  }
+  else {
+    // soltar el botón?
+    if (digitalRead(BUTTON_PIN) == LOW) return; // still pressed
+    
+    // falso release?
+    unsigned long inicial = millis();
+    while (millis()-inicial <= 17) {
+      if(digitalRead(BUTTON_PIN) == LOW) return;
+    }
+    
+    pressed = false;
   }
 }
