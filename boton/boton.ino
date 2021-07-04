@@ -1,6 +1,5 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <SPI.h>
 #include <SD.h>
 #include "Secret.h" // #define WIFI_NAME & WIFI_PASS here
 
@@ -79,8 +78,14 @@ void setup() {
   }
 #endif
 
-  DEBUG_PRINTLN("ssid: " + ssid);
-  DEBUG_PRINTLN("pass: " + password);
+  DEBUG_PRINT("Connecting to " + ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin((const char*) ssid.c_str(), (const char*) password.c_str());
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    DEBUG_PRINT(".");
+  }
+  DEBUG_PRINTLN("");
   client.setServer(MQTT_SERVER, MQTT_PORT);
 }
 
