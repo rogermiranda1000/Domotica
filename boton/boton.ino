@@ -105,7 +105,7 @@ void loop() {
     }
 
     DEBUG_PRINTLN("Botón pulsado.");
-    client.publish("central", "btn01");
+    client.publish("central", ID " btn " ID); // el botón ID notifica que se ha pulsado, y que realize la acción 'ID'
     
     pressed = true;
   }
