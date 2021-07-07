@@ -5,56 +5,51 @@
 //#include <WiFiNINA.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <SD.h>
+
 #include <string.h>
+
+#include <SPI.h>
+#include <SD.h>
 
 #define SD_PIN D8
 
 // subscription types
-#define NO_SUBSCRIPTION 0
-#define ID_SUBSCRIPTION 1
-#define GROUP_SUBSCRIPTION 2
-
-// big brain; cortesia de https://stackoverflow.com/a/5586469/9178470
-#ifdef  DEBUG
-  #define DEBUG_PRINT(str) Serial.print(str)
-  #define DEBUG_PRINTLN(str) Serial.println(str)
-#else
-  #define DEBUG_PRINT(str)
-  #define DEBUG_PRINTLN(str)
-#endif
+#define NO_SUBSCRIPTION 	(uint8_t)0
+#define ID_SUBSCRIPTION 	(uint8_t)1
+#define GROUP_SUBSCRIPTION 	(uint8_t)2
 
 class DomoticConnector {
   public:
-    DomoticConnector(char *ip, short port, char *group, byte subscription, MQTT_CALLBACK_SIGNATURE, char *file_name);
-    DomoticConnector(char *ip, short port, char *group, byte subscription, MQTT_CALLBACK_SIGNATURE) : DomoticConnector(ip, port, group, subscription, callback, NULL) {}
-    DomoticConnector(char *ip, short port, char *group, char *file_name) : DomoticConnector(ip, port, group, NO_SUBSCRIPTION, NULL, file_name) {}
-    DomoticConnector(char *ip, short port, char *group) : DomoticConnector(ip, port, group, NO_SUBSCRIPTION, NULL, NULL) {}
+	DomoticConnector(void) = default;
+    DomoticConnector(const char *ip, uint16_t port, const char *group, uint8_t subscription, MQTT_CALLBACK_SIGNATURE);
+    DomoticConnector(const char *ip, uint16_t port, const char *group) : DomoticConnector(ip, port, group, NO_SUBSCRIPTION, NULL) {}
 	~DomoticConnector(void);
 	
-	void setup(void);
+	static void setup(bool debug_mode, const char *ssid, const char *password, char *file_name);
+	
 	bool loop(void);
 	char *getID();
 	String getStringID();
-	void sendMessage(char *group, char *msg);
-	void sendMessage(char *group, String msg);
+	void publish(const char *group, const char *msg);
+	void publish(const char *group, String msg);
 	
   private:
-	byte _subscription;
+	static bool _debug_mode;
+	
+	uint8_t _subscription;
     char *_id;
 	char *_group;
 	WiFiClient *_espClient;
 	PubSubClient *_client;
 	
-	// temporales (se destruyen al entrar a setup)
-	char *_sd_file_name;
-	char *_ip;
-	short _port;
-	MQTT_CALLBACK_SIGNATURE;
+	static bool getDataFromSD(char *file_name, String *ssid, String *password);
+	static void conditionalPrintln(const char *str);
+	static void conditionalPrintln(String str);
 	
-	char *generateID(char *group);
-	bool getDataFromSD(char *file_name, String *ssid, String *password);
+	char *generateID(const char *group);
 	bool checkConnection();
 };
+
+extern DomoticConnector Connector; // to use static methods without '::'
 
 #endif

@@ -1,70 +1,58 @@
 #include "DomoticConnector.h"
 
-byte _subscription;
+bool DomoticConnector::_debug_mode;
+
+uint8_t _subscription;
 char *_id;
 char *_group;
 WiFiClient *_espClient;
 PubSubClient *_client;
 
-// temporales (se destruyen al entrar a setup)
-char *_sd_file_name;
-char *_ip;
-short _port;
-MQTT_CALLBACK_SIGNATURE;
+void DomoticConnector::conditionalPrintln(const char *str) {
+	if (DomoticConnector::_debug_mode) Serial.println(str);
+}
 
-DomoticConnector::DomoticConnector(char *ip, short port, char *group, byte subscription, MQTT_CALLBACK_SIGNATURE, char *file_name) {
+void DomoticConnector::conditionalPrintln(String str) {
+	if (DomoticConnector::_debug_mode) Serial.println((const char*) str.c_str());
+}
+
+DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *group, uint8_t subscription, MQTT_CALLBACK_SIGNATURE) {
 	this->_subscription = subscription;
-	this->_port = port;
-	this->callback = callback;
-	
-	this->_ip = NULL;
-	this->_ip = (char*)malloc(sizeof(char)*(strlen(ip)+1));
-	if (this->_ip != NULL) strcpy(this->_ip, ip);
 
 	// copy group identifier
+	DomoticConnector::conditionalPrintln("New client on group " + String(group));
 	this->_group = NULL;
 	this->_group = (char*)malloc(sizeof(char)*(strlen(group)+1));
 	if (this->_group != NULL) strcpy(this->_group, group);
 	
 	this->_id = this->generateID(group);
-	
-	if (file_name != NULL) {
-		this->_sd_file_name = NULL;
-		this->_sd_file_name = (char*)malloc(sizeof(char)*(strlen(file_name)+1));
-		if (this->_sd_file_name != NULL) strcpy(this->_sd_file_name, file_name);
-	}
+	DomoticConnector::conditionalPrintln("Using id " + String(this->_id));
 	
 	this->_espClient = new WiFiClient();
 	this->_client = new PubSubClient(*this->_espClient);
+	
+	this->_client->setServer(ip, port);
+	this->_client->setCallback(callback);
 }
 
-void DomoticConnector::setup(void) {
-	DEBUG_PRINTLN("Using id " + String(this->getID()));
-
+void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, char *file_name) {
+	DomoticConnector::_debug_mode = debug_mode;
 	WiFi.mode(WIFI_STA);
-#if defined(WIFI_NAME) && defined(WIFI_PASS)
-	// credentials hardcoded
-	DEBUG_PRINTLN("Wifi over #define: " + String(WIFI_NAME));
-	WiFi.begin(WIFI_NAME, WIFI_PASS);
-#else
-	// get credentials from SD
-	String ssid, password;
-	if (this->_sd_file_name != NULL) {
-		if (this->getDataFromSD(this->_sd_file_name, &ssid,&password)) {
-			DEBUG_PRINTLN("Wifi over SD: " + ssid);
-			WiFi.begin((const char*) ssid.c_str(), (const char*) password.c_str());
-		}
-		
-		free(this->_sd_file_name);
-		this->_sd_file_name = NULL;
+
+	if (ssid != NULL && password != NULL) {
+		// credentials hardcoded
+		DomoticConnector::conditionalPrintln("Wifi over constant: " + String(ssid));
+		WiFi.begin(ssid, password);
 	}
-#endif
-	if (this->_ip == NULL) return; // ya se ha llamado setup()
-	this->_client->setServer(this->_ip, this->_port);
-	this->_client->setCallback(this->callback);
-	
-	free(this->_ip);
-	this->_ip = NULL;
+	else {
+		// get credentials from SD
+		String sd_ssid, sd_password;
+		if (file_name != NULL && DomoticConnector::getDataFromSD(file_name, &sd_ssid,&sd_password)) {
+			DomoticConnector::conditionalPrintln("Wifi over SD: " + sd_ssid);
+			WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
+		}
+		else DomoticConnector::conditionalPrintln("Unable to get credentials from SD");
+	}
 }
 
 DomoticConnector::~DomoticConnector(void) {
@@ -75,21 +63,24 @@ DomoticConnector::~DomoticConnector(void) {
 	delete this->_espClient;
 }
 
-char *DomoticConnector::generateID(char *group) {
-	byte mac[6];
-	WiFi.macAddress(mac);
-
-	char *id = (char*)malloc(sizeof(char)*(strlen(this->_group)+(2*6)+1));
+char *DomoticConnector::generateID(const char *group) {
+	char *id = NULL;
+	id = (char*)malloc(sizeof(char)*(strlen(this->_group)+(2*WL_MAC_ADDR_LENGTH)+1));
 	if (id == NULL) return id;
 	
-	byte n = 0, aux = 0;
+	uint8_t n = 0, aux = 0;
 	// copy group
 	while (this->_group[n]) {
 		id[n] = this->_group[n];
 		n++;
 	}
+	
+	// get MAC
+	uint8_t mac[WL_MAC_ADDR_LENGTH];
+	WiFi.macAddress(mac);
+	
 	// copy MAC
-	while (aux < 6) {
+	while (aux < WL_MAC_ADDR_LENGTH) {
 		id[n] = mac[aux]>>4;
 		id[n] += (id[n]<10 ? '0' : ('A'-10));
 
@@ -101,6 +92,7 @@ char *DomoticConnector::generateID(char *group) {
 		aux++;
 	}
 	id[n] = '\0';
+	return id;
 }
 
 char *DomoticConnector::getID() {
@@ -136,7 +128,7 @@ bool DomoticConnector::checkConnection() {
 	// not connected
 	if (this->_client->connect(this->_id)) {
 		// conected; re-subscribe (if needed)
-		DEBUG_PRINTLN("Connected to MQTT");
+		DomoticConnector::conditionalPrintln("Connected to MQTT");
 		if (this->_subscription == ID_SUBSCRIPTION) this->_client->subscribe(this->_id);
 		else if (this->_subscription == GROUP_SUBSCRIPTION) this->_client->subscribe(this->_group);
 		return true;
@@ -144,12 +136,12 @@ bool DomoticConnector::checkConnection() {
 	return false;
 }
 
-void DomoticConnector::sendMessage(char *group, char *msg) {
+void DomoticConnector::publish(const char *group, const char *msg) {
 	if (this->_client->connected()) this->_client->publish(group, msg);
 }
 
-void DomoticConnector::sendMessage(char *group, String msg) {
-	this->sendMessage(group, msg.c_str());
+void DomoticConnector::publish(const char *group, String msg) {
+	this->publish(group, (const char*)msg.c_str());
 }
 
 bool DomoticConnector::loop(void) {
