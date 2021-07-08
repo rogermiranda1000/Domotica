@@ -16,7 +16,8 @@ account_sid = '…' # Found on Twilio Console Dashboard
 auth_token = '…' # Found on Twilio Console Dashboard
 myPhone = '+34…' # Phone number you used to verify your Twilio account
 TwilioNumber = '+34…' # Phone number given to you by Twilio
-client = Client(account_sid, auth_token)
+#mobile_client = Client(account_sid, auth_token)
+mobile_client = None
 
 import picamera
 
@@ -256,22 +257,20 @@ def on_message(client, userdata, msg):
 			
 	if RoA == 'r':
 		enviar(prefix, tipo, mensaje)
+		
+def sendMobileMessage(msg):
+	if mobile_client != None:
+		mobile_client.messages.create(to=myPhone, from_=TwilioNumber, body=msg)
 
 def gas(ind):
 	database(False, "UPDATE Alarma SET gas=1 WHERE ind="+str(ind)+";")
-    client.messages.create(
-      to=myPhone,
-      from_=TwilioNumber,
-      body='Hay mucho gas en su casa.')
+    sendMobileMessage('Hay mucho gas en su casa.')
 
 def fuego():
 	results = database(True, "SELECT ind FROM Tipos WHERE ID=\""+prefix+"\";")
 	for row in results:
 		database(False, "UPDATE Alarma SET fuego=1 WHERE ind="+str(row[0])+";")
-    client.messages.create(
-      to=myPhone,
-      from_=TwilioNumber,
-      body='Su casa esta ardiendo.')
+    sendMobileMessage('Su casa esta ardiendo.')
 
 def clima(rango, prob):
 	page = requests.get(city.read(), timeout = 15.0)
@@ -306,10 +305,7 @@ def on_publish(mosq, obj, mid):
 	print("mid: " + str(mid))
 
 def alarma():
-    client.messages.create(
-      to=myPhone,
-      from_=TwilioNumber,
-      body='Movimiento en su casa.')
+    sendMobileMessage('Movimiento en su casa.')
 	
 def foto(path):
 	with picamera.PiCamera() as picx:
