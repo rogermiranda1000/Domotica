@@ -35,6 +35,25 @@ bool WifiCredentialsSaver::setSSID(const char *ssid) {
 }
 
 bool WifiCredentialsSaver::setPassword(const char *pass) {
+	char last;
+	uint16_t n = WifiCredentialsSaver::_passwordIndex, aux = 0;
+	byte checksum = 0;
+	
+	do {
+		if (n >= EEPROM_LENGHT-1) return false; // we need to save the checksum
+		last = pass[aux];
+		EEPROM.write(n, last);
+		checksum ^= (byte)last;
+		n++;
+		aux++;
+	} while (last != '\0');
+	
+	EEPROM.write(n, (byte)~checksum);
+	
+	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
+	EEPROM.commit();
+	#endif
+	
 	return true;
 }
 
@@ -76,7 +95,21 @@ bool WifiCredentialsSaver::readSSID(const char **ssid) {
 bool WifiCredentialsSaver::readPassword(const char **pass) {
 	if (WifiCredentialsSaver::_saved_pass[0] == CREDENTIALS_DEFAULT) {
 		// not in cache, get it
-		WifiCredentialsSaver::_saved_pass[0] = '\0';
+		uint16_t n = WifiCredentialsSaver::_passwordIndex, aux = 0;
+		byte checksum = 0;
+		char last;
+		
+		do {
+			if (n >= EEPROM_LENGHT-1 && aux == CREDENTIALS_LENGHT) return false; // we need to read the checksum
+			last = (byte)EEPROM.read(n);
+			WifiCredentialsSaver::_saved_pass[aux] = last;
+			checksum ^= (byte)last;
+			n++;
+			aux++;
+		} while (last != '\0');
+		
+		// the next character it's the checksum
+		if ((byte)~checksum != (byte)EEPROM.read(n)) return false;
 	}
 	
 	*pass = (const char*)WifiCredentialsSaver::_saved_pass;
