@@ -87,7 +87,7 @@ bool DomoticConnector::eepromUpdate(String str) {
 	if (n == checkLen) {
 		// es SSID
 		strPtr += n;
-		if (WifiSaver.setSSID(strPtr)) {
+		if (WifiSaver.safeSetSSID(strPtr)) {
 			DomoticConnector::conditionalPrint("New SSID value: ");
 			DomoticConnector::conditionalPrintln(strPtr);
 		}
@@ -104,8 +104,8 @@ bool DomoticConnector::eepromUpdate(String str) {
 	if (n == checkLen) {
 		// es password
 		strPtr += n;
-		if (WifiSaver.setPassword(strPtr)) DomoticConnector::conditionalPrintln("New password value setted");
-		else DomoticConnector::conditionalPrintln("Error while saving the new password");
+		if (WifiSaver.safeSetPassword(strPtr)) DomoticConnector::conditionalPrintln("New password value setted");
+		else DomoticConnector::conditionalPrintln("Error while saving the new password. Keep in mind that you need to set the SSID first.");
 		return true;
 	}
 	

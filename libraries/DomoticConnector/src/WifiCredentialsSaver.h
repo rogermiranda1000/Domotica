@@ -17,8 +17,20 @@ class WifiCredentialsSaver {
   public:
 	static void setup(void);
   
+	/**
+	* It sets the password on the EEPROM
+	* /!\ If you're not sure if it will be called before setSSID() call safeSetSSID()
+	*/
 	static bool setSSID(const char *ssid);
+	static bool safeSetSSID(const char *ssid);
+	
+	/**
+	* It sets the password on the EEPROM
+	* /!\ If you're not sure if it will be called after setSSID() call safeSetPassword()
+	*/
 	static bool setPassword(const char *pass);
+	static bool safeSetPassword(const char *pass);
+	
 	static void emptyEEPROM(void);
 
 	static bool readCredentials(const char **ssid, const char **pass);

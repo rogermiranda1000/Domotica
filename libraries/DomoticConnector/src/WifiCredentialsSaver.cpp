@@ -10,6 +10,23 @@ void WifiCredentialsSaver::setup(void) {
 	#endif
 }
 
+bool WifiCredentialsSaver::safeSetSSID(const char *ssid) {
+	bool retorno = WifiCredentialsSaver::setSSID(ssid);
+	if (retorno && WifiCredentialsSaver::_saved_pass[0] != CREDENTIALS_DEFAULT) retorno = WifiCredentialsSaver::setPassword((const char*)WifiCredentialsSaver::_saved_pass);
+	return retorno;
+}
+
+bool WifiCredentialsSaver::safeSetPassword(const char *pass) {
+	if (WifiCredentialsSaver::_saved_ssid[0] == CREDENTIALS_DEFAULT) {
+		strncpy(WifiCredentialsSaver::_saved_pass, pass, CREDENTIALS_LENGHT);
+		return false;
+	}
+	
+	bool retorno = WifiCredentialsSaver::setSSID((const char*)WifiCredentialsSaver::_saved_ssid);
+	if (retorno) retorno = WifiCredentialsSaver::setPassword(pass);
+	return retorno;
+}
+
 bool WifiCredentialsSaver::setSSID(const char *ssid) {
 	char last;
 	uint16_t n = 0;
@@ -21,6 +38,7 @@ bool WifiCredentialsSaver::setSSID(const char *ssid) {
 		if (n == EEPROM_LENGHT-1) return false; // we need to save the checksum
 		last = ssid[n];
 		EEPROM.write(n, last);
+		WifiCredentialsSaver::_saved_ssid[n] = last;
 		checksum ^= (byte)last;
 		n++;
 	} while (last != '\0');
@@ -30,6 +48,8 @@ bool WifiCredentialsSaver::setSSID(const char *ssid) {
 	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	EEPROM.commit();
 	#endif
+	
+	WifiCredentialsSaver::_passwordIndex = n+1; // n for checksum; n+1 for password
 	
 	return true;
 }
@@ -43,6 +63,7 @@ bool WifiCredentialsSaver::setPassword(const char *pass) {
 		if (n >= EEPROM_LENGHT-1) return false; // we need to save the checksum
 		last = pass[aux];
 		EEPROM.write(n, last);
+		WifiCredentialsSaver::_saved_pass[aux] = last;
 		checksum ^= (byte)last;
 		n++;
 		aux++;
@@ -63,6 +84,9 @@ void WifiCredentialsSaver::emptyEEPROM(void) {
 	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	EEPROM.commit();
 	#endif
+	
+	WifiCredentialsSaver::_saved_ssid[0] = CREDENTIALS_DEFAULT;
+	WifiCredentialsSaver::_saved_pass[0] = CREDENTIALS_DEFAULT;
 }
 
 bool WifiCredentialsSaver::readSSID(const char **ssid) {
