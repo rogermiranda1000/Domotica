@@ -2,6 +2,7 @@
 
 bool DomoticConnector::_debug_mode;
 
+void (*_on_reconnect)(void);
 uint8_t _subscription;
 char *_id;
 char *_group;
@@ -20,7 +21,8 @@ void DomoticConnector::conditionalPrint(const char *str) {
 	if (DomoticConnector::_debug_mode) Serial.print(str);
 }
 
-DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *group, uint8_t subscription, MQTT_CALLBACK_SIGNATURE) {
+DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *group, void (*on_reconnect)(void), uint8_t subscription, MQTT_CALLBACK_SIGNATURE) {
+	this->_on_reconnect = on_reconnect;
 	this->_subscription = subscription;
 
 	// copy group identifier
@@ -36,7 +38,7 @@ DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *gr
 	this->_client = new PubSubClient(*this->_espClient);
 	
 	this->_client->setServer(ip, port);
-	this->_client->setCallback(callback);
+	if (callback != NULL) this->_client->setCallback(callback);
 }
 
 void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name) {
@@ -201,6 +203,9 @@ bool DomoticConnector::checkConnection() {
 		DomoticConnector::conditionalPrintln("Connected to MQTT");
 		if (this->_subscription == ID_SUBSCRIPTION) this->_client->subscribe(this->_id);
 		else if (this->_subscription == GROUP_SUBSCRIPTION) this->_client->subscribe(this->_group);
+		
+		if (this->_on_reconnect != NULL) this->_on_reconnect(); // notify
+		
 		return true;
 	}
 	return false;

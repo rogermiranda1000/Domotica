@@ -70,6 +70,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
+void onReconnect(void) {
+  connector->publish("central", connector->getStringID() + " led");
+}
+
 void executeAnimationM(int PIN) {
   for (short c = 0; c < 256; c++) {
     analogWrite(PIN, c);
@@ -88,7 +92,7 @@ void setup() {
   Serial.begin(9600);
   
   Connector.setup(true, WIFI_NAME, WIFI_PASS, SD_PIN, FILE_NAME);
-  connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP);
+  connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP, onReconnect, ID_SUBSCRIPTION, callback);
   
   pinMode(WHITEPIN, OUTPUT);
   pinMode(REDPIN, OUTPUT);

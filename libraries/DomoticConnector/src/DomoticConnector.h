@@ -29,8 +29,8 @@
 class DomoticConnector {
   public:
 	DomoticConnector(void) = default;
-	DomoticConnector(const char *ip, uint16_t port, const char *group, uint8_t subscription, MQTT_CALLBACK_SIGNATURE);
-	DomoticConnector(const char *ip, uint16_t port, const char *group) : DomoticConnector(ip, port, group, NO_SUBSCRIPTION, NULL) {}
+	DomoticConnector(const char *ip, uint16_t port, const char *group, void (*on_reconnect)(void), uint8_t subscription, MQTT_CALLBACK_SIGNATURE);
+	DomoticConnector(const char *ip, uint16_t port, const char *group) : DomoticConnector(ip, port, group, NULL, NO_SUBSCRIPTION, NULL) {}
 	~DomoticConnector(void);
 	
 	static void setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name);
@@ -54,6 +54,7 @@ class DomoticConnector {
   private:
 	static bool _debug_mode;
 	
+	void (*_on_reconnect)(void);
 	uint8_t _subscription;
 	char *_id;
 	char *_group;
