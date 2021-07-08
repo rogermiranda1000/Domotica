@@ -1,6 +1,6 @@
 #include <DomoticConnector.h>
-const char WIFI_NAME[] = "...";
-const char WIFI_PASS[] = "...";
+const char *const WIFI_NAME = "...";
+const char *const WIFI_PASS = "...";
 
 #define DEBUG 0
 #if (DEBUG==1)
@@ -24,6 +24,7 @@ DomoticConnector *connector;
 void setup() {
 #if DEBUG
   Serial.begin(9600);
+  while (!Serial);
 #endif
 
   Connector.setup(DEBUG, WIFI_NAME, WIFI_PASS, SD_PIN, FILE_NAME);
@@ -34,6 +35,7 @@ void setup() {
 
 void loop() {
   connector->loop();
+  if (Serial.available()) Connector.eepromUpdate(Serial.readString());
   
   static bool pressed = false;
   if(!pressed) {
