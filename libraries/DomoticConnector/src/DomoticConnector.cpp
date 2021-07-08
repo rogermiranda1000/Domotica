@@ -62,6 +62,8 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 			WiFi.begin(ssid, password);
 		}
 		else {
+			DomoticConnector::conditionalPrintln("EEPROM checksum is invalid");
+			
 			// get credentials from SD
 			String sd_ssid, sd_password;
 			if (file_name != NULL && DomoticConnector::getDataFromSD(sd_pin, file_name, &sd_ssid,&sd_password)) {
@@ -85,8 +87,11 @@ bool DomoticConnector::eepromUpdate(String str) {
 	if (n == checkLen) {
 		// es SSID
 		strPtr += n;
-		DomoticConnector::conditionalPrint("New SSID value: ");
-		DomoticConnector::conditionalPrintln(strPtr);
+		if (WifiSaver.setSSID(strPtr)) {
+			DomoticConnector::conditionalPrint("New SSID value: ");
+			DomoticConnector::conditionalPrintln(strPtr);
+		}
+		else DomoticConnector::conditionalPrintln("Error while saving the new SSID");
 		return true;
 	}
 	
@@ -99,8 +104,8 @@ bool DomoticConnector::eepromUpdate(String str) {
 	if (n == checkLen) {
 		// es password
 		strPtr += n;
-		DomoticConnector::conditionalPrint("New password value: ");
-		DomoticConnector::conditionalPrintln(strPtr);
+		if (WifiSaver.setPassword(strPtr)) DomoticConnector::conditionalPrintln("New password value setted");
+		else DomoticConnector::conditionalPrintln("Error while saving the new password");
 		return true;
 	}
 	

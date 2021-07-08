@@ -10,19 +10,23 @@
 	#define EEPROM_LENGHT 512 // NodeMCU, entre otras muchas
 #endif
 
+#define CREDENTIALS_LENGHT 50 // str size
+#define CREDENTIALS_DEFAULT (char)-1
+
 class WifiCredentialsSaver {
   public:
 	static void setup(void);
   
-	static void setSSID(char *ssid);
-	static void setPassword(char *pass);
+	static bool setSSID(const char *ssid);
+	static bool setPassword(const char *pass);
 	static void emptyEEPROM(void);
 
 	static bool readCredentials(const char **ssid, const char **pass);
 	
   private:
-	static char *_saved_ssid;
-	static char *_saved_pass;
+	static uint16_t _passwordIndex;
+	static char _saved_ssid[CREDENTIALS_LENGHT];
+	static char _saved_pass[CREDENTIALS_LENGHT];
 	
 	static bool readSSID(const char **ssid);
 	static bool readPassword(const char **pass);
