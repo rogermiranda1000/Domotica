@@ -1,23 +1,24 @@
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
-#include <SPI.h>
-#include <SD.h>
-String ssid = "ASUS";
-String password = "8TEqumxs6K35";
-const char* mqtt_server = "192.168.1.230";
-const char* mqtt_server2 = "192.168.1.229";
-bool dest = false;
-WiFiClient espClient;
-PubSubClient client(espClient);
-File myFile;
-const char* cliente = "LED01";
-const int WHITEPIN = D1;
-const int REDPIN = D3;
-const int GREENPIN = D8;
-const int BLUEPIN = D4;
-int FADESPEED = 5; // make this higher to slow down
-bool anim = false;
-int proceso = 0;
+#include <DomoticConnector.h>
+
+const char *const WIFI_NAME = NULL;//"...";
+const char *const WIFI_PASS = NULL;//"...";
+
+#define MQTT_SERVER "192.168.1.229"
+#define MQTT_PORT   1883
+#define GROUP       "led"
+
+#define SD_PIN      D2
+#define FILE_NAME   "credentials.txt"
+
+#define WHITEPIN    D1
+#define REDPIN      D3
+#define GREENPIN    D8
+#define BLUEPIN     D4
+
+DomoticConnector *connector;
+volatile bool anim = false;
+uint8_t proceso = 0;
+volatile int FADESPEED = 5; // make this higher to slow down
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String mensaje = "";
@@ -58,112 +59,79 @@ void callback(char* topic, byte* payload, unsigned int length) {
     FADESPEED = msg[1].toInt();
   }
   else if (msg[0] == "set") {
-    int num = msg[2].toInt();
-    int pin = 0;
+    byte pin;
     if (msg[1] == "white") pin = WHITEPIN;
     else if (msg[1] == "red") pin = REDPIN;
     else if (msg[1] == "green") pin = GREENPIN;
     else if (msg[1] == "blue") pin = BLUEPIN;
-    analogWrite(pin, num);
-  }
-}
-
-void reconnect() {
-  while (!client.connected()) {
-    Serial.print("Conectando...");
-    if (client.connect(cliente)) {
-      Serial.println(" Conectado!");
-      client.subscribe(cliente);
-      client.publish("central", (const char*) (String(cliente) + " led").c_str());
-    } else {
-      Serial.print("fallo, rc=");
-      Serial.print(client.state());
-      Serial.println(" intentado otra vez en 2 segundos...");
-      cambiarDestino();
-      delay(2000);
-    }
-  }
-}
-
-void cambiarDestino() {
-  dest = !dest;
-  if (dest) client.setServer(mqtt_server, 1883);
-  else client.setServer(mqtt_server2, 1883);
-}
-
-void conectar() {
-  if (!SD.begin(4)) {
-    Serial.println("Error en la lectura de la MicroSD.");
-  }
-  myFile = SD.open("send.txt");
-  if (myFile) {
-    Serial.println("SD:");
-    int x = 0;
-    while (myFile.available()) {
-      String msgo = myFile.readStringUntil('\n');
-      Serial.println(msgo);
-      if (x == 0) ssid = msgo;
-      else if (x == 1) password = msgo;
-      x++;
-    }
-    myFile.close();
-  } else {
-    Serial.println("Error en la lectura de la MicroSD.");
-  }
-  //ssid.remove(ssid.length() - 1);
-  Serial.println("ssid: '" + ssid + "'");
-  Serial.println("pass: '" + password + "'");
-  Serial.print("Connecting to ");
-  Serial.print(ssid);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin((const char*) ssid.c_str(), (const char*) password.c_str());
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  cambiarDestino();
-  client.setCallback(callback);
-}
-
-void setup() {
-  Serial.begin(9600);
-  pinMode(WHITEPIN, OUTPUT);
-  pinMode(REDPIN, OUTPUT);
-  pinMode(GREENPIN, OUTPUT);
-  pinMode(BLUEPIN, OUTPUT);
-  digitalWrite(WHITEPIN, LOW);
-  digitalWrite(REDPIN, LOW);
-  digitalWrite(GREENPIN, LOW);
-  digitalWrite(BLUEPIN, LOW);
-  conectar();
-}
-
-void loop() {
-  if (!client.connected()) reconnect();
-  client.loop();
-  if (anim) {
-    if (++proceso == 1) executeAnimationM(REDPIN);
-    else if (proceso == 2) executeAnimationL(BLUEPIN);
-    else if (proceso == 3) executeAnimationM(GREENPIN);
-    else if (proceso == 4) executeAnimationL(REDPIN);
-    else if (proceso == 5) executeAnimationM(BLUEPIN);
-    else if (proceso == 6) executeAnimationL(GREENPIN);
-    else if (proceso == 7) proceso = 0;
+    else return;
+    
+    analogWrite(pin, (unsigned byte)msg[2].toInt());
   }
 }
 
 void executeAnimationM(int PIN) {
-  for (int c = 0; c < 256; c++) {
+  for (short c = 0; c < 256; c++) {
     analogWrite(PIN, c);
     delay(FADESPEED);
   }
 }
 
 void executeAnimationL(int PIN) {
-  for (int c = 255; c > 0; c--) {
+  for (short c = 255; c > 0; c--) {
     analogWrite(PIN, c);
     delay(FADESPEED);
+  }
+}
+
+void setup() {
+  Serial.begin(9600);
+  
+  Connector.setup(true, WIFI_NAME, WIFI_PASS, SD_PIN, FILE_NAME);
+  connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP);
+  
+  pinMode(WHITEPIN, OUTPUT);
+  pinMode(REDPIN, OUTPUT);
+  pinMode(GREENPIN, OUTPUT);
+  pinMode(BLUEPIN, OUTPUT);
+  
+  digitalWrite(WHITEPIN, LOW);
+  digitalWrite(REDPIN, LOW);
+  digitalWrite(GREENPIN, LOW);
+  digitalWrite(BLUEPIN, LOW);
+}
+
+void loop() {
+  connector->loop();
+  if (Serial.available()) Connector.eepromUpdate(Serial.readString());
+  
+  if (!anim) {
+    switch (proceso) {
+      case 0:
+        executeAnimationM(REDPIN);
+        break;
+        
+      case 1:
+        executeAnimationL(BLUEPIN);
+        break;
+        
+      case 2:
+        executeAnimationM(GREENPIN);
+        break;
+        
+      case 3:
+        executeAnimationL(REDPIN);
+        break;
+        
+      case 4:
+        executeAnimationM(BLUEPIN);
+        break;
+        
+      case 5:
+        executeAnimationL(GREENPIN);
+    }
+    
+    proceso++;
+    if (proceso == 6) proceso = 0;
   }
 }
