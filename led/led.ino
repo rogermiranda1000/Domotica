@@ -20,10 +20,17 @@ volatile bool anim = false;
 uint8_t proceso = 0;
 volatile int FADESPEED = 5; // make this higher to slow down
 
+void turnOff(void) {
+  analogWrite(WHITEPIN, 0);
+  analogWrite(REDPIN, 0);
+  analogWrite(GREENPIN, 0);
+  analogWrite(BLUEPIN, 0);
+}
+
 void callback(char* topic, byte* payload, unsigned int length) {
   String mensaje = "";
   for (int i = 0; i < length; i++) mensaje += (char)payload[i];
-  //Serial.println(mensaje);
+  
   String msg[3] = {"", "", ""};
   int msg_val = 0;
   int pos;
@@ -35,30 +42,29 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   msg[msg_val] = mensaje;
   Serial.println(msg[0] + "; " + msg[1] + "; " + msg[2]);
+  
   if (msg[0] == "anim") {
     anim = true;
     proceso = 0;
-    digitalWrite(REDPIN, LOW);
-    digitalWrite(GREENPIN, LOW);
-    digitalWrite(BLUEPIN, HIGH);
   }
   else if (msg[0] == "animS") anim = false;
   else if (msg[0] == "off") {
-    digitalWrite(WHITEPIN, LOW);
-    digitalWrite(REDPIN, LOW);
-    digitalWrite(GREENPIN, LOW);
-    digitalWrite(BLUEPIN, LOW);
+    anim = false;
+    turnOff();
   }
   else if (msg[0] == "on") {
-    digitalWrite(WHITEPIN, HIGH);
-    digitalWrite(REDPIN, HIGH);
-    digitalWrite(GREENPIN, HIGH);
-    digitalWrite(BLUEPIN, HIGH);
+    anim = false;
+    analogWrite(WHITEPIN, 255);
+    analogWrite(REDPIN, 255);
+    analogWrite(GREENPIN, 255);
+    analogWrite(BLUEPIN, 255);
   }
   else if (msg[0] == "delay") {
     FADESPEED = msg[1].toInt();
   }
   else if (msg[0] == "set") {
+    anim = false;
+    
     byte pin;
     if (msg[1] == "white") pin = WHITEPIN;
     else if (msg[1] == "red") pin = REDPIN;
@@ -74,18 +80,17 @@ void onReconnect(void) {
   connector->publish("central", connector->getStringID() + " led");
 }
 
-void executeAnimationM(int PIN) {
-  for (short c = 0; c < 256; c++) {
-    analogWrite(PIN, c);
-    delay(FADESPEED);
-  }
+uint8_t c;
+void executeAnimationM(byte pin) {
+  analogWrite(pin, c);
+  delay(FADESPEED);
+  c++;
 }
 
-void executeAnimationL(int PIN) {
-  for (short c = 255; c > 0; c--) {
-    analogWrite(PIN, c);
-    delay(FADESPEED);
-  }
+void executeAnimationL(byte pin) {
+  analogWrite(pin, c);
+  delay(FADESPEED);
+  c--;
 }
 
 void setup() {
@@ -99,43 +104,80 @@ void setup() {
   pinMode(GREENPIN, OUTPUT);
   pinMode(BLUEPIN, OUTPUT);
   
-  digitalWrite(WHITEPIN, LOW);
-  digitalWrite(REDPIN, LOW);
-  digitalWrite(GREENPIN, LOW);
-  digitalWrite(BLUEPIN, LOW);
+  turnOff();
 }
 
 void loop() {
   connector->loop();
   if (Serial.available()) Connector.eepromUpdate(Serial.readString());
   
-  if (!anim) {
+  if (anim) {
     switch (proceso) {
       case 0:
-        executeAnimationM(REDPIN);
+        analogWrite(REDPIN, 0);
+        analogWrite(GREENPIN, 0);
+        analogWrite(BLUEPIN, 255);
+        proceso++;
         break;
-        
+      
       case 1:
-        executeAnimationL(BLUEPIN);
+        c = 0;
+        proceso++;
         break;
-        
+
       case 2:
-        executeAnimationM(GREENPIN);
+        executeAnimationM(REDPIN);
+        if (c == 0) proceso++; // overflow (256 times done)
         break;
         
       case 3:
-        executeAnimationL(REDPIN);
+        c = 255;
+        proceso++;
         break;
-        
+
       case 4:
-        executeAnimationM(BLUEPIN);
+        executeAnimationL(BLUEPIN);
+        if (c == 255) proceso++; // overflow (256 times done)
         break;
         
       case 5:
+        c = 0;
+        proceso++;
+        break;
+
+      case 6:
+        executeAnimationM(GREENPIN);
+        if (c == 0) proceso++; // overflow (256 times done)
+        break;
+
+      case 7:
+        c = 255;
+        proceso++;
+        break;
+        
+      case 8:
+        executeAnimationL(REDPIN);
+        if (c == 255) proceso++; // overflow (256 times done)
+        break;
+
+      case 9:
+        c = 0;
+        proceso++;
+        break;
+        
+      case 10:
+        executeAnimationM(BLUEPIN);
+        if (c == 0) proceso++; // overflow (256 times done)
+        break;
+
+      case 11:
+        c = 255;
+        proceso++;
+        break;
+        
+      case 12:
         executeAnimationL(GREENPIN);
+        if (c == 255) proceso = 0; // overflow (256 times done)
     }
-    
-    proceso++;
-    if (proceso == 6) proceso = 0;
   }
 }
