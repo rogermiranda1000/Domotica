@@ -2,16 +2,19 @@
 #define _DomoticConnector_h_
 
 #include "Arduino.h"
-//#include <WiFiNINA.h>
-#include <ESP8266WiFi.h>
+#ifdef ARDUINO_AVR_UNO_WIFI_REV2
+	#include <WiFiNINA.h>
+#elif defined(ARDUINO_ESP8266_NODEMCU_ESP12E)
+	#include <ESP8266WiFi.h>
+#else
+	#error "This library was made for Lolin NodeMCU v3 or Arduino UNO Wifi Rev2"
+#endif
 #include <PubSubClient.h>
 
 #include <string.h>
 
 #include <SPI.h>
 #include <SD.h>
-
-#define SD_PIN D8
 
 // subscription types
 #define NO_SUBSCRIPTION 	(uint8_t)0
@@ -25,7 +28,7 @@ class DomoticConnector {
     DomoticConnector(const char *ip, uint16_t port, const char *group) : DomoticConnector(ip, port, group, NO_SUBSCRIPTION, NULL) {}
 	~DomoticConnector(void);
 	
-	static void setup(bool debug_mode, const char *ssid, const char *password, char *file_name);
+	static void setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name);
 	
 	bool loop(void);
 	char *getID();
@@ -42,7 +45,7 @@ class DomoticConnector {
 	WiFiClient *_espClient;
 	PubSubClient *_client;
 	
-	static bool getDataFromSD(char *file_name, String *ssid, String *password);
+	static bool getDataFromSD(byte sd_pin, char *file_name, String *ssid, String *password);
 	static void conditionalPrintln(const char *str);
 	static void conditionalPrintln(String str);
 	

@@ -1,10 +1,9 @@
 #include <DomoticConnector.h>
-
-#define WIFI_NAME   "..."
-#define WIFI_PASS   "..."
+const char WIFI_NAME[] = "...";
+const char WIFI_PASS[] = "...";
 
 #define DEBUG 0
-#if (DEBUG)
+#if (DEBUG==1)
   #define DEBUG_PRINT(str) Serial.print(str)
   #define DEBUG_PRINTLN(str) Serial.println(str)
 #else
@@ -17,23 +16,24 @@
 #define GROUP       "btn"
 
 #define BUTTON_PIN  D2
+#define SD_PIN      D8
 #define FILE_NAME   "credentials.txt"
 
-DomoticConnector connector(MQTT_SERVER, MQTT_PORT, GROUP);
+DomoticConnector *connector;
 
 void setup() {
-#ifdef DEBUG
+#if DEBUG
   Serial.begin(9600);
-  while(!Serial);
 #endif
 
-  Connector.setup(DEBUG, WIFI_NAME, WIFI_PASS, FILE_NAME);
+  Connector.setup(DEBUG, WIFI_NAME, WIFI_PASS, SD_PIN, FILE_NAME);
+  connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP);
   
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 }
 
 void loop() {
-  connector.loop();
+  connector->loop();
   
   static bool pressed = false;
   if(!pressed) {
@@ -47,7 +47,7 @@ void loop() {
     }
 
     DEBUG_PRINTLN("Botón pulsado.");
-    connector.publish("central", connector.getStringID() + " btn " + connector.getStringID()); // el botón ID notifica que se ha pulsado, y que realize la acción 'ID'
+    connector->publish("central", connector->getStringID() + " btn " + connector->getStringID()); // el botón ID notifica que se ha pulsado, y que realize la acción 'ID'
     
     pressed = true;
   }

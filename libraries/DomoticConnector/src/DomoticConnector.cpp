@@ -13,7 +13,7 @@ void DomoticConnector::conditionalPrintln(const char *str) {
 }
 
 void DomoticConnector::conditionalPrintln(String str) {
-	if (DomoticConnector::_debug_mode) Serial.println((const char*) str.c_str());
+	if (DomoticConnector::_debug_mode) Serial.println(str);
 }
 
 DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *group, uint8_t subscription, MQTT_CALLBACK_SIGNATURE) {
@@ -35,9 +35,11 @@ DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *gr
 	this->_client->setCallback(callback);
 }
 
-void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, char *file_name) {
+void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name) {
 	DomoticConnector::_debug_mode = debug_mode;
+	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	WiFi.mode(WIFI_STA);
+	#endif
 
 	if (ssid != NULL && password != NULL) {
 		// credentials hardcoded
@@ -47,7 +49,7 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 	else {
 		// get credentials from SD
 		String sd_ssid, sd_password;
-		if (file_name != NULL && DomoticConnector::getDataFromSD(file_name, &sd_ssid,&sd_password)) {
+		if (file_name != NULL && DomoticConnector::getDataFromSD(sd_pin, file_name, &sd_ssid,&sd_password)) {
 			DomoticConnector::conditionalPrintln("Wifi over SD: " + sd_ssid);
 			WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
 		}
@@ -103,8 +105,8 @@ String DomoticConnector::getStringID() {
 	return String(this->getID());
 }
 
-bool DomoticConnector::getDataFromSD(char *file_name, String *ssid, String *password) {
-	if (!SD.begin(SD_PIN)) return false;
+bool DomoticConnector::getDataFromSD(byte sd_pin, char *file_name, String *ssid, String *password) {
+	if (!SD.begin(sd_pin)) return false;
 	
 	File myFile = SD.open(file_name);
 	if (myFile == NULL) return false;
