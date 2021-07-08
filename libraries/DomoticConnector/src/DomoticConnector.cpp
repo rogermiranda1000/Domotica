@@ -16,6 +16,10 @@ void DomoticConnector::conditionalPrintln(String str) {
 	if (DomoticConnector::_debug_mode) Serial.println(str);
 }
 
+void DomoticConnector::conditionalPrint(const char *str) {
+	if (DomoticConnector::_debug_mode) Serial.print(str);
+}
+
 DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *group, uint8_t subscription, MQTT_CALLBACK_SIGNATURE) {
 	this->_subscription = subscription;
 
@@ -43,18 +47,74 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 
 	if (ssid != NULL && password != NULL) {
 		// credentials hardcoded
-		DomoticConnector::conditionalPrintln("Wifi over constant: " + String(ssid));
+		DomoticConnector::conditionalPrint("Wifi over constant: ");
+		DomoticConnector::conditionalPrintln(ssid);
 		WiFi.begin(ssid, password);
 	}
 	else {
-		// get credentials from SD
-		String sd_ssid, sd_password;
-		if (file_name != NULL && DomoticConnector::getDataFromSD(sd_pin, file_name, &sd_ssid,&sd_password)) {
-			DomoticConnector::conditionalPrintln("Wifi over SD: " + sd_ssid);
-			WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
+		if (WifiSaver.readCredentials(&ssid, &password)) {
+			// credentials in EEPROM
+			DomoticConnector::conditionalPrint("Wifi over EEPROM: ");
+			DomoticConnector::conditionalPrintln(ssid);
+			WiFi.begin(ssid, password);
 		}
-		else DomoticConnector::conditionalPrintln("Unable to get credentials from SD");
+		else {
+			// get credentials from SD
+			String sd_ssid, sd_password;
+			if (file_name != NULL && DomoticConnector::getDataFromSD(sd_pin, file_name, &sd_ssid,&sd_password)) {
+				DomoticConnector::conditionalPrint("Wifi over SD: ");
+				DomoticConnector::conditionalPrintln(sd_ssid);
+				WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
+			}
+			else DomoticConnector::conditionalPrintln("Unable to get credentials from SD");
+		}
 	}
+}
+
+bool DomoticConnector::eepromUpdate(String str) {
+	uint8_t n = 0, len = str.length()-1, checkLen = strlen(EEPROM_SET_SSID);
+	str.remove(len,1); // remove '\n'
+	const char *strPtr = str.c_str();
+	while (n < len && n < checkLen) {
+		if (strPtr[n] != EEPROM_SET_SSID[n]) break;
+		n++;
+	}
+	if (n == checkLen) {
+		// es SSID
+		strPtr += n;
+		DomoticConnector::conditionalPrint("New SSID value: ");
+		DomoticConnector::conditionalPrintln(strPtr);
+		return true;
+	}
+	
+	n = 0;
+	checkLen = strlen(EEPROM_SET_PASSWORD);
+	while (n < len && n < checkLen) {
+		if (strPtr[n] != EEPROM_SET_PASSWORD[n]) break;
+		n++;
+	}
+	if (n == checkLen) {
+		// es password
+		strPtr += n;
+		DomoticConnector::conditionalPrint("New password value: ");
+		DomoticConnector::conditionalPrintln(strPtr);
+		return true;
+	}
+	
+	n = 0;
+	checkLen = strlen(EEPROM_DELETE);
+	while (n < len && n < checkLen) {
+		if (strPtr[n] != EEPROM_DELETE[n]) break;
+		n++;
+	}
+	if (n == checkLen) {
+		// es delete
+		DomoticConnector::conditionalPrintln("Removing EEPROM data...");
+		WifiSaver.emptyEEPROM();
+		return true;
+	}
+	
+	return false;
 }
 
 DomoticConnector::~DomoticConnector(void) {

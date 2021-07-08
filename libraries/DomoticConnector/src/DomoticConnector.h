@@ -15,11 +15,16 @@
 
 #include <SPI.h>
 #include <SD.h>
+#include "WifiCredentialsSaver.h"
 
 // subscription types
 #define NO_SUBSCRIPTION 	(uint8_t)0
 #define ID_SUBSCRIPTION 	(uint8_t)1
 #define GROUP_SUBSCRIPTION 	(uint8_t)2
+
+#define EEPROM_DELETE		"+DEL"
+#define EEPROM_SET_SSID		"+SSID:"
+#define EEPROM_SET_PASSWORD	"+PASS:"
 
 class DomoticConnector {
   public:
@@ -29,6 +34,16 @@ class DomoticConnector {
 	~DomoticConnector(void);
 	
 	static void setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name);
+	
+	/**
+	* Llamar siempre que Serial.available()
+	* Para cambiar la SSID enviar '+SSID:<nueva SSID>'
+	* Para cambiar la contraseña enviar '+PASS:<nueva contraseña>'
+	* /!\ Los valores no se leeran hasta el próximo reinicio
+	* @param str Retorno de Serial.readString()
+	* @return Si el comando ha sido procesado (si era un comando de la libreria; true), o si no (si no es un comando de la libreria y, por lo tanto, es del código externo; false)
+	*/
+	static bool eepromUpdate(String str);
 	
 	bool loop(void);
 	char *getID();
@@ -48,6 +63,7 @@ class DomoticConnector {
 	static bool getDataFromSD(byte sd_pin, char *file_name, String *ssid, String *password);
 	static void conditionalPrintln(const char *str);
 	static void conditionalPrintln(String str);
+	static void conditionalPrint(const char *str);
 	
 	char *generateID(const char *group);
 	bool checkConnection();
