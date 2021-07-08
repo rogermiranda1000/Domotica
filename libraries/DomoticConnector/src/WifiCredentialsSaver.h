@@ -12,6 +12,8 @@
 
 class WifiCredentialsSaver {
   public:
+	static void setup(void);
+  
 	static void setSSID(char *ssid);
 	static void setPassword(char *pass);
 	static void emptyEEPROM(void);

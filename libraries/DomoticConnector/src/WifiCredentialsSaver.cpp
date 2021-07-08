@@ -3,14 +3,25 @@
 char *WifiCredentialsSaver::_saved_ssid = NULL;
 char *WifiCredentialsSaver::_saved_pass = NULL;
 
+void WifiCredentialsSaver::setup(void) {
+	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
+	EEPROM.begin(EEPROM_LENGHT);
+	#endif
+}
+
 void WifiCredentialsSaver::setSSID(char *ssid) {
+	
 }
 
 void WifiCredentialsSaver::setPassword(char *pass) {
+	
 }
 
 void WifiCredentialsSaver::emptyEEPROM(void) {
 	for (unsigned int n = 0; n < EEPROM_LENGHT; n++) EEPROM.write(n, 'f');
+	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
+	EEPROM.commit();
+	#endif
 }
 
 bool WifiCredentialsSaver::readSSID(const char **ssid) {

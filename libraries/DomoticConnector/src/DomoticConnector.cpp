@@ -41,6 +41,9 @@ DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *gr
 
 void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name) {
 	DomoticConnector::_debug_mode = debug_mode;
+	
+	WifiSaver.setup();
+	
 	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	WiFi.mode(WIFI_STA);
 	#endif
