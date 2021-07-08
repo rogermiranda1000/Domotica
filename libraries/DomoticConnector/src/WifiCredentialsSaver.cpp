@@ -99,7 +99,7 @@ bool WifiCredentialsSaver::readSSID(const char **ssid) {
 		char last;
 		
 		do {
-			if (n == EEPROM_LENGHT-1 && n == CREDENTIALS_LENGHT) return false; // we need to read the checksum
+			if (n == EEPROM_LENGHT-1 || n == CREDENTIALS_LENGHT) return false; // we need to read the checksum
 			last = (byte)EEPROM.read(n);
 			WifiCredentialsSaver::_saved_ssid[n] = last;
 			checksum ^= (byte)last;
@@ -124,7 +124,7 @@ bool WifiCredentialsSaver::readPassword(const char **pass) {
 		char last;
 		
 		do {
-			if (n >= EEPROM_LENGHT-1 && aux == CREDENTIALS_LENGHT) return false; // we need to read the checksum
+			if (n >= EEPROM_LENGHT-1 || aux == CREDENTIALS_LENGHT) return false; // we need to read the checksum
 			last = (byte)EEPROM.read(n);
 			WifiCredentialsSaver::_saved_pass[aux] = last;
 			checksum ^= (byte)last;
