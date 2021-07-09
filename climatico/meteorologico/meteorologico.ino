@@ -1,4 +1,4 @@
-#include "SparkFunWeatherShield.h"
+#include <SparkFunWeatherShield.h>
 #include <DomoticConnector.h>
 
 #define DEBUG 0
