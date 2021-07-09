@@ -15,3 +15,19 @@ Envia: -
 - "animS" (detiene animación RGB)
 - "delay <delay>" (establece un nuevo delay para la animación RGB)
 - "set <white/red/green/blue> <0-255>" (establece el % de iluminación del canal indicado)
+
+-- Módulo apertura --
+Al conectarse: -
+Envia:
+- "<ID> mag OPEN" (al abrirse, cada 1s)
+Órdenes: -
+
+-- Módulo climático simple --
+Al conectarse:
+- "<ID> ?"
+Envia:
+- "<ID> luz <luz>"
+- "<ID> temperatura <temperatura>"
+- "<ID> humedad <humedad>"
+Órdenes:
+- <delay> (establece cada cuantos ms se envian los datos)
