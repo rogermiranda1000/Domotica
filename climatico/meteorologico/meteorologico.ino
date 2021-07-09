@@ -80,7 +80,7 @@ void loop() {
     float light_level = weather.getLightLevel();
     Serial.print("Light = ");
     Serial.print(light_level);
-    Serial.println("V");
+    Serial.println("%");
     connector->publishSelf("central", "luz " + String(light_level));
   
     //Check batt level

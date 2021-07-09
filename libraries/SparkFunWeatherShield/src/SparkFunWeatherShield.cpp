@@ -89,11 +89,7 @@ float WeatherShield::getLightLevel() {
 
   float lightSensor = analogRead(SHIELD_LIGHT);
 
-  operatingVoltage = 3.3 / operatingVoltage; //The reference voltage is 3.3V
-
-  lightSensor = operatingVoltage * lightSensor;
-
-  return lightSensor;
+  return 100*(lightSensor/operatingVoltage);
 }
 
 //Returns the voltage of the raw pin based on the 3.3V rail
