@@ -26,9 +26,19 @@ Envia información sobre la temperatura, humedad, nivel de agua y luz.
 Envia información sobre la temperatura, humedad, nivel de agua, luz, velocidad y dirección del viento.
 
 Requerimientos:
+- [Arduino UNO Wifi Rev2](https://store.arduino.cc/arduino-uno-wifi-rev2)
 - [Sparkfun Weather Meter Kit](https://www.sparkfun.com/products/15901)
 - [SparkFun Weather Shield](https://www.sparkfun.com/products/13956)
 - [RJ11 Connector (x2)](https://www.sparkfun.com/products/132)
+
+> **/!\\ Al soldar los pines del Shield no conecteis SDA ni SCL. /!\\**
+> El Shield está creado para Arduino UNO, y la placa Arduino UNO Wifi Rev2 tiene un pinout de comunicación distinta. Además, [uno de los sensores tiene la misma ID de I2C que el chip de criptografia de la placa Rev2](https://forum.arduino.cc/t/arduino-uno-wifi-rev-2-and-liquidcrystal_i2c-solved/562494/18#msg4005531).
+> El código se ha adaptado para usar los pines A4 y A5 como pines de I2C (mediante la libreria de SoftWire) para evitar los problemas mencionados.
+
+> **/!\\ Si no usais Vin teneis que conectar Vin a +5V /!\\**
+> El Shield está creado para Arduino UNO, y la placa [Arduino UNO Wifi Rev2 no suministra corriente a Vin si se alimenta mediante la toma de +5V](https://forum.arduino.cc/t/i2c-problem-while-using-sparkfun-weather-shield-on-arduino-uno-wifi-rev2/698082/33?u=rogermiranda1000).
+> Un ejemplo de no usar Vin es cuando conectais la placa mediante USB.
+> **Es importante que, si decidis usar Vin después de realizar la conexión, la quiteis o destruireis la placa.**
 
 ## Módulo alarma
 Activa/desactiva la alarma. Se puede realizar mediante el keypad o el sensor dactilar.
