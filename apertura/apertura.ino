@@ -14,6 +14,7 @@ const char *const WIFI_PASS = NULL;//"...";
 
 DomoticConnector *connector;
 
+bool closed;
 void setup() {
   Serial.begin(9600);
   
@@ -21,16 +22,24 @@ void setup() {
   connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP);
   
   pinMode(APERTURA, INPUT);
+  closed = digitalRead(APERTURA);
 }
 
 void loop() {
   connector->loop();
   if (Serial.available()) Connector.eepromUpdate(Serial.readString());
-  
-  if (digitalRead(APERTURA)) {
-    while (digitalRead(APERTURA)) delay(1);
-    Serial.println("Abierto");
-    connector->publish("central", connector->getStringID() + "mag OPEN");
+
+  if (closed) {
+    if (!digitalRead(APERTURA)) {
+      // se ha abierto
+      Serial.println("Abierto");
+      connector->publish("central", connector->getStringID() + " mag OPEN");
+      closed = false;
+    }
   }
-  delay(10);
+  else if (digitalRead(APERTURA)) {
+    // se ha cerrado
+    Serial.println("Closed");
+    closed = true;
+  }
 }
