@@ -78,6 +78,10 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 	}
 }
 
+void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password) {
+	DomoticConnector::setup(debug_mode, ssid, password, (byte)-1, NULL);
+}
+
 bool DomoticConnector::eepromUpdate(String str) {
 	uint8_t n = 0, len = str.length()-1, checkLen = strlen(EEPROM_SET_SSID);
 	str.remove(len,1); // remove '\n'
@@ -217,6 +221,14 @@ void DomoticConnector::publish(const char *group, const char *msg) {
 
 void DomoticConnector::publish(const char *group, String msg) {
 	this->publish(group, (const char*)msg.c_str());
+}
+
+void DomoticConnector::publishSelf(const char *group, String msg) {
+	this->publish(group, (const char*)(this->getStringID() + " " + msg).c_str());
+}
+
+void DomoticConnector::publishSelf(const char *group, const char *msg) {
+	this->publishSelf(group, String(msg));
 }
 
 bool DomoticConnector::loop(void) {
