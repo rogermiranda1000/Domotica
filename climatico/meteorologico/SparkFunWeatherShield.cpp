@@ -16,9 +16,8 @@ WeatherShield::~WeatherShield() {
   delete this->_rainSensor;
 }
 
-//Set board's pins as input/output
-//In: use_leds, use on-board's LEDs
-void WeatherShield::startPins(bool use_leds) {
+// start I2C & sensors
+void WeatherShield::begin(bool use_leds) {
   // analog inputs
   pinMode(SHIELD_REFERENCE_3V3, INPUT);
   pinMode(SHIELD_LIGHT, INPUT);
@@ -32,10 +31,7 @@ void WeatherShield::startPins(bool use_leds) {
   
   this->_windSensor->begin();
   this->_rainSensor->begin();
-}
-
-// start I2C & sensors
-void WeatherShield::begin() {
+  
   // I2C
   this->_i2cPort->setTxBuffer(this->_swTxBuffer, MAX_I2C_BUFFER);
   this->_i2cPort->setRxBuffer(this->_swRxBuffer, MAX_I2C_BUFFER);

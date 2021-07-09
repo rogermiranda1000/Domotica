@@ -36,8 +36,7 @@ public:
   WeatherShield::~WeatherShield();
 
   //Public Functions
-  void WeatherShield::startPins(bool use_leds = false); // set board's pins as input/output
-  void WeatherShield::begin(); // start I2C & sensors
+  void WeatherShield::begin(bool use_leds = false); // start I2C & sensors
   float WeatherShield::readHumidity(); // get sensor's humidity
   float WeatherShield::readTemperature(); // get sensor's temparature
   float WeatherShield::readPressure(); // get sensor's pressure

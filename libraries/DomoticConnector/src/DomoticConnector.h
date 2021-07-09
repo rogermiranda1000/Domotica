@@ -34,6 +34,7 @@ class DomoticConnector {
 	~DomoticConnector(void);
 	
 	static void setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name);
+	static void setup(bool debug_mode, const char *ssid, const char *password);
 	
 	/**
 	* Llamar siempre que Serial.available()
