@@ -67,8 +67,16 @@ float WeatherShield::getWindSpeed() {
   return this->_windSensor->getWindSpeed();
 }
 
+float WeatherShield::getWindSpeedKm() {
+	return this->getWindSpeed()*1.609344;
+}
+
 int WeatherShield::getWindDirection() {
   return this->_windSensor->getWindDirection();
+}
+
+int WeatherShield::decodeWindDirection(unsigned int adc) {
+  return this->_windSensor->decodeWindDirection(adc);
 }
 
 float WeatherShield::getRain() {

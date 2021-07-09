@@ -43,7 +43,9 @@ public:
   float WeatherShield::getBatteryLevel(); //Returns the voltage of the raw pin based on the 3.3V rail
   float WeatherShield::getLightLevel(); //Returns the voltage of the light sensor based on the 3.3V rail
   float WeatherShield::getWindSpeed();
+  float WeatherShield::getWindSpeedKm();
   int WeatherShield::getWindDirection();
+  int WeatherShield::decodeWindDirection(unsigned int adc);
   float WeatherShield::getRain(); //Returns the rain in inches/second
 
   //Public Variables
