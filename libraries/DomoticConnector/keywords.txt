@@ -6,3 +6,5 @@ DomoticConnector	KEYWORD1
 getStringID	KEYWORD2
 eepromUpdate	KEYWORD2
 WifiSaver	KEYWORD1
+publishSelf	KEYWORD2
+publish	KEYWORD2

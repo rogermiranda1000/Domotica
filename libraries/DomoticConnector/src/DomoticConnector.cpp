@@ -223,6 +223,14 @@ void DomoticConnector::publish(const char *group, String msg) {
 	this->publish(group, (const char*)msg.c_str());
 }
 
+void DomoticConnector::publishSelf(const char *group, String msg) {
+	this->publish(group, (const char*)(this->getStringID() + " " + msg).c_str());
+}
+
+void DomoticConnector::publishSelf(const char *group, const char *msg) {
+	this->publishSelf(group, String(msg));
+}
+
 bool DomoticConnector::loop(void) {
 	if (!this->checkConnection()) return false;
 	

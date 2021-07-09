@@ -51,6 +51,13 @@ class DomoticConnector {
 	String getStringID();
 	void publish(const char *group, const char *msg);
 	void publish(const char *group, String msg);
+	void publishSelf(const char *group, const char *msg);
+	/**
+	* Envia el mensaje, precedido del ID
+	* @param group Grupo a enviar
+	* @param msg Mensaje a enviar
+	*/
+	void publishSelf(const char *group, String msg);
 	
   private:
 	static bool _debug_mode;

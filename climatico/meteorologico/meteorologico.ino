@@ -20,19 +20,37 @@ const char *const WIFI_PASS = NULL;//"...";
 DomoticConnector *connector;
 WeatherShield weather;
 
+unsigned int retraso = 1000, acumulado;
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  String mensaje = "";
+  for (int i=0;i<length;i++) mensaje += (char)payload[i];
+  Serial.println("Retraso de " + mensaje + "ms.");
+  retraso = mensaje.toInt();
+}
+
+void onReconnect(void) {
+  connector->publishSelf("central", "?");
+}
+
 void setup() {
   Serial.begin(9600);
 
   Connector.setup(DEBUG, WIFI_NAME, WIFI_PASS);
-  connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP);
+  connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP, onReconnect, ID_SUBSCRIPTION, callback);
   
   weather.begin(); // enable I2C & sensors
+
+  acumulado = millis();
 }
 
 // print readings every second
 void loop() {
   connector->loop();
   if (Serial.available()) Connector.eepromUpdate(Serial.readString());
+
+  if (millis() - acumulado < retraso) return;
+  acumulado = millis();
   
   //Check Humidity Sensor
   float humidity = weather.readHumidity();
