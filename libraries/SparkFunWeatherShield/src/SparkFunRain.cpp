@@ -3,7 +3,6 @@
 Rain *Rain::instance;
 
 Rain::Rain(uint8_t port) {
-  this->_initTime = millis();
   this->_port = port;
   Rain::instance = this;
 }
@@ -12,11 +11,18 @@ Rain::Rain(uint8_t port) {
 void Rain::begin() {
 	pinMode(this->_port, INPUT_PULLUP); // input from wind meters rain gauge sensor
 	attachInterrupt(digitalPinToInterrupt(this->_port), Rain::rainIRQ, FALLING);
+	
+	this->_initTime = millis();
+	this->_rainIn = 0;
 }
 
 //Returns the rain in inches/second
 float Rain::getRain() {
-  return this->_rainIn / (millis() - this->_initTime);
+	// TODO this is not accurate
+	// TODO Timer overflow
+	float elapsedTime = millis() - this->_initTime;
+	if (elapsedTime == 0) return 0;
+	return this->_rainIn / elapsedTime;
 }
 
 // Count rain gauge bucket tips as they occur

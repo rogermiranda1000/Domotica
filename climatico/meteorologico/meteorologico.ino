@@ -77,8 +77,6 @@ void loop() {
     connector->publishSelf("central", "presion " + String(pressure));
 
     // light and battery doesn't use I2C, but if the I2C it's not working it's very likely (due to internal connections) that light nor battery will work
-    // rain didn't work either
-    
     //Check light sensor
     float light_level = weather.getLightLevel();
     Serial.print("Light = ");
@@ -92,12 +90,6 @@ void loop() {
     Serial.print(batt_lvl);
     Serial.println("V");
     // TODO enviar?
-  
-    float rain = weather.getRain();
-    Serial.print("Rain = ");
-    Serial.print(rain);
-    Serial.println("\"/s");
-    connector->publishSelf("central", "agua " + String(rain));
   }
   
   float speed = weather.getWindSpeedKm();
@@ -110,6 +102,12 @@ void loop() {
   Serial.print("Direction = ");
   Serial.println(dir);
   connector->publishSelf("central", "direccion " + String(dir));
+  
+  float rain = weather.getRain();
+  Serial.print("Rain = ");
+  Serial.print(rain);
+  Serial.println("\"/s");
+  connector->publishSelf("central", "agua " + String(rain));
 
   Serial.println();
 
