@@ -25,6 +25,7 @@ void setup() {
 
 void loop() {
   connector->loop();
+  if (Serial.available()) Connector.eepromUpdate(Serial.readString());
   
   if (digitalRead(APERTURA)) {
     while (digitalRead(APERTURA)) delay(1);
