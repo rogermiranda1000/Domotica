@@ -23,10 +23,11 @@ WeatherShield weather;
 unsigned int retraso = 1000, acumulado;
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  String mensaje = "";
-  for (int i=0;i<length;i++) mensaje += (char)payload[i];
-  Serial.println("Retraso de " + mensaje + "ms.");
-  retraso = mensaje.toInt();
+  retraso = 0;
+  for (int i=0;i<length;i++) retraso = retraso*10 + ((char)payload[i])-'0'; // atoi
+  
+  Serial.println("Retraso de " + String(retraso) + "s");
+  retraso = 1000*retraso;
 }
 
 void onReconnect(void) {
@@ -76,6 +77,8 @@ void loop() {
     connector->publishSelf("central", "presion " + String(pressure));
 
     // light and battery doesn't use I2C, but if the I2C it's not working it's very likely (due to internal connections) that light nor battery will work
+    // rain didn't work either
+    
     //Check light sensor
     float light_level = weather.getLightLevel();
     Serial.print("Light = ");
@@ -89,6 +92,12 @@ void loop() {
     Serial.print(batt_lvl);
     Serial.println("V");
     // TODO enviar?
+  
+    float rain = weather.getRain();
+    Serial.print("Rain = ");
+    Serial.print(rain);
+    Serial.println("\"/s");
+    connector->publishSelf("central", "agua " + String(rain));
   }
   
   float speed = weather.getWindSpeedKm();
@@ -101,12 +110,6 @@ void loop() {
   Serial.print("Direction = ");
   Serial.println(dir);
   connector->publishSelf("central", "direccion " + String(dir));
-  
-  float rain = weather.getRain();
-  Serial.print("Rain = ");
-  Serial.print(rain);
-  Serial.println("\"/s");
-  connector->publishSelf("central", "agua " + String(rain));
 
   Serial.println();
 
