@@ -24,12 +24,12 @@ modulos = []
 mod_tip = []
 clients = {}
 
-db = MySQLdb.connect("localhost","phpmyadmin","pass","Domotica")
-cursor = db.cursor()
 picx = picamera.PiCamera()
 
 def database(obtener, sql):
 	try:
+		db = MySQLdb.connect("localhost","phpmyadmin","pass","Domotica")
+		cursor = db.cursor()
 		cursor.execute(sql)
 		
 		if obtener == True:
