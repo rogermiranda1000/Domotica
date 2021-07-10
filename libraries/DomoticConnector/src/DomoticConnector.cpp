@@ -2,13 +2,6 @@
 
 bool DomoticConnector::_debug_mode;
 
-void (*_on_reconnect)(void);
-uint8_t _subscription;
-char *_id;
-char *_group;
-WiFiClient *_espClient;
-PubSubClient *_client;
-
 void DomoticConnector::conditionalPrintln(const char *str) {
 	if (DomoticConnector::_debug_mode) Serial.println(str);
 }

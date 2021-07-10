@@ -37,6 +37,7 @@ public:
 
   //Public Functions
   void WeatherShield::begin(bool use_leds = false); // start I2C & sensors
+  void WeatherShield::loop(void);
   float WeatherShield::readHumidity(); // get sensor's humidity
   float WeatherShield::readTemperature(); // get sensor's temparature
   float WeatherShield::readPressure(); // get sensor's pressure
@@ -46,7 +47,7 @@ public:
   float WeatherShield::getWindSpeedKm();
   int WeatherShield::getWindDirection();
   int WeatherShield::decodeWindDirection(unsigned int adc);
-  float WeatherShield::getRain(); //Returns the rain in inches/second
+  float WeatherShield::getRain(); //Returns the rain in mm/s
 
   //Public Variables
 
