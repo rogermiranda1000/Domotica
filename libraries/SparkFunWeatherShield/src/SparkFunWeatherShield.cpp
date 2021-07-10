@@ -45,6 +45,10 @@ void WeatherShield::begin(bool use_leds) {
   this->_pressureSensor->enableEventFlags(); // Enable all three pressure and temp event flags
 }
 
+void WeatherShield::loop(void) {
+	this->_rainSensor->update();
+}
+
 // get sensor's humidity
 float WeatherShield::readHumidity() {
   if (this->_i2cPort == NULL) return ERROR_NOT_BEGIN;

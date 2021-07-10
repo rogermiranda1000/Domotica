@@ -49,6 +49,8 @@ void setup() {
 void loop() {
   connector->loop();
   if (Serial.available()) Connector.eepromUpdate(Serial.readString());
+  
+  weather.loop();
 
   if (millis() - acumulado < retraso) return;
   acumulado = millis();
