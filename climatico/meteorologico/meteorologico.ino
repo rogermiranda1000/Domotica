@@ -10,7 +10,7 @@
   #define DEBUG_PRINTLN(str)
 #endif
 
-#define MQTT_SERVER "192.168.1.79"
+#define MQTT_SERVER "192.168.1.229"
 #define MQTT_PORT   1883
 #define GROUP       "met"
 
