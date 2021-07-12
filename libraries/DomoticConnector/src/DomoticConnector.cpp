@@ -2,21 +2,20 @@
 
 bool DomoticConnector::_debug_mode;
 
-uint8_t _subscription;
-char *_id;
-char *_group;
-WiFiClient *_espClient;
-PubSubClient *_client;
-
 void DomoticConnector::conditionalPrintln(const char *str) {
 	if (DomoticConnector::_debug_mode) Serial.println(str);
 }
 
 void DomoticConnector::conditionalPrintln(String str) {
-	if (DomoticConnector::_debug_mode) Serial.println((const char*) str.c_str());
+	if (DomoticConnector::_debug_mode) Serial.println(str);
 }
 
-DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *group, uint8_t subscription, MQTT_CALLBACK_SIGNATURE) {
+void DomoticConnector::conditionalPrint(const char *str) {
+	if (DomoticConnector::_debug_mode) Serial.print(str);
+}
+
+DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *group, void (*on_reconnect)(void), uint8_t subscription, MQTT_CALLBACK_SIGNATURE) {
+	this->_on_reconnect = on_reconnect;
 	this->_subscription = subscription;
 
 	// copy group identifier
@@ -32,27 +31,97 @@ DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *gr
 	this->_client = new PubSubClient(*this->_espClient);
 	
 	this->_client->setServer(ip, port);
-	this->_client->setCallback(callback);
+	if (callback != NULL) this->_client->setCallback(callback);
 }
 
-void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, char *file_name) {
+void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name) {
 	DomoticConnector::_debug_mode = debug_mode;
+	
+	WifiSaver.setup();
+	
+	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	WiFi.mode(WIFI_STA);
+	#endif
 
 	if (ssid != NULL && password != NULL) {
 		// credentials hardcoded
-		DomoticConnector::conditionalPrintln("Wifi over constant: " + String(ssid));
+		DomoticConnector::conditionalPrint("Wifi over constant: ");
+		DomoticConnector::conditionalPrintln(ssid);
 		WiFi.begin(ssid, password);
 	}
 	else {
-		// get credentials from SD
-		String sd_ssid, sd_password;
-		if (file_name != NULL && DomoticConnector::getDataFromSD(file_name, &sd_ssid,&sd_password)) {
-			DomoticConnector::conditionalPrintln("Wifi over SD: " + sd_ssid);
-			WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
+		if (WifiSaver.readCredentials(&ssid, &password)) {
+			// credentials in EEPROM
+			DomoticConnector::conditionalPrint("Wifi over EEPROM: ");
+			DomoticConnector::conditionalPrintln(ssid);
+			WiFi.begin(ssid, password);
 		}
-		else DomoticConnector::conditionalPrintln("Unable to get credentials from SD");
+		else {
+			DomoticConnector::conditionalPrintln("EEPROM checksum is invalid");
+			
+			// get credentials from SD
+			String sd_ssid, sd_password;
+			if (file_name != NULL && DomoticConnector::getDataFromSD(sd_pin, file_name, &sd_ssid,&sd_password)) {
+				DomoticConnector::conditionalPrint("Wifi over SD: ");
+				DomoticConnector::conditionalPrintln(sd_ssid);
+				WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
+			}
+			else DomoticConnector::conditionalPrintln("Unable to get credentials from SD");
+		}
 	}
+}
+
+void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password) {
+	DomoticConnector::setup(debug_mode, ssid, password, (byte)-1, NULL);
+}
+
+bool DomoticConnector::eepromUpdate(String str) {
+	uint8_t n = 0, len = str.length()-1, checkLen = strlen(EEPROM_SET_SSID);
+	str.remove(len,1); // remove '\n'
+	const char *strPtr = str.c_str();
+	while (n < len && n < checkLen) {
+		if (strPtr[n] != EEPROM_SET_SSID[n]) break;
+		n++;
+	}
+	if (n == checkLen) {
+		// es SSID
+		strPtr += n;
+		if (WifiSaver.safeSetSSID(strPtr)) {
+			DomoticConnector::conditionalPrint("New SSID value: ");
+			DomoticConnector::conditionalPrintln(strPtr);
+		}
+		else DomoticConnector::conditionalPrintln("Error while saving the new SSID");
+		return true;
+	}
+	
+	n = 0;
+	checkLen = strlen(EEPROM_SET_PASSWORD);
+	while (n < len && n < checkLen) {
+		if (strPtr[n] != EEPROM_SET_PASSWORD[n]) break;
+		n++;
+	}
+	if (n == checkLen) {
+		// es password
+		strPtr += n;
+		if (WifiSaver.safeSetPassword(strPtr)) DomoticConnector::conditionalPrintln("New password value setted");
+		else DomoticConnector::conditionalPrintln("Error while saving the new password. Keep in mind that you need to set the SSID first.");
+		return true;
+	}
+	
+	n = 0;
+	checkLen = strlen(EEPROM_DELETE);
+	while (n < len && n < checkLen) {
+		if (strPtr[n] != EEPROM_DELETE[n]) break;
+		n++;
+	}
+	if (n == checkLen) {
+		// es delete
+		DomoticConnector::conditionalPrintln("Removing EEPROM data...");
+		WifiSaver.emptyEEPROM();
+		return true;
+	}
+	
+	return false;
 }
 
 DomoticConnector::~DomoticConnector(void) {
@@ -103,8 +172,8 @@ String DomoticConnector::getStringID() {
 	return String(this->getID());
 }
 
-bool DomoticConnector::getDataFromSD(char *file_name, String *ssid, String *password) {
-	if (!SD.begin(SD_PIN)) return false;
+bool DomoticConnector::getDataFromSD(byte sd_pin, char *file_name, String *ssid, String *password) {
+	if (!SD.begin(sd_pin)) return false;
 	
 	File myFile = SD.open(file_name);
 	if (myFile == NULL) return false;
@@ -131,6 +200,9 @@ bool DomoticConnector::checkConnection() {
 		DomoticConnector::conditionalPrintln("Connected to MQTT");
 		if (this->_subscription == ID_SUBSCRIPTION) this->_client->subscribe(this->_id);
 		else if (this->_subscription == GROUP_SUBSCRIPTION) this->_client->subscribe(this->_group);
+		
+		if (this->_on_reconnect != NULL) this->_on_reconnect(); // notify
+		
 		return true;
 	}
 	return false;
@@ -142,6 +214,14 @@ void DomoticConnector::publish(const char *group, const char *msg) {
 
 void DomoticConnector::publish(const char *group, String msg) {
 	this->publish(group, (const char*)msg.c_str());
+}
+
+void DomoticConnector::publishSelf(const char *group, String msg) {
+	this->publish(group, (const char*)(this->getStringID() + " " + msg).c_str());
+}
+
+void DomoticConnector::publishSelf(const char *group, const char *msg) {
+	this->publishSelf(group, String(msg));
 }
 
 bool DomoticConnector::loop(void) {
