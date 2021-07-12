@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import socket
 import fcntl
 import struct
@@ -38,11 +39,10 @@ def database(obtener, sql):
 			db.commit()
 	except (MySQLdb.Error, MySQLdb.Warning) as e:
 		#db.rollback()
-		print "DB FAIL"
-		print e
+		print(f"DB FAIL: {e}")
 		
 def tiempo(t):
-	print "Tiempo limite, actualizando... [" + t + "]"
+	print(f"Tiempo limite, actualizando... [{t}]")
 	try:
 		results = database(True, "SELECT ind,Val FROM Valor WHERE Tiempo=\'"+t+"\'")
 		if results == None:
@@ -73,19 +73,17 @@ def tiempo(t):
 			elif t == 'd':
 				return
 			ind = total[indicador]
-			print str(indicador) + ": " + str(ind)
+			print(f"{str(indicador)}: {str(ind)}")
 			
 			database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) VALUES ("+str(indicador)+",\'"+str(tmp)+"\',"+str(hora)+","+str(ind)+")")
 	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		print "DB load error"
-		print e
+		print(f"DB load error: {e}")
 	
 def enviar(ID, tip, valu):
 	try:
 		database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',"+str(datetime.datetime.now().second)+","+str(valu)+" FROM Tipos as T WHERE T.ID='"+ID+"' AND T.Tipo='"+tip+"' AND T.RoA='r';")
 	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		print "DB load error"
-		print e
+		print(f"DB load error: {e}")
 		
 def get_ip_adress(ifname):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -116,12 +114,12 @@ def cam():
 		b64 = foto("/home/pi/Pictures/img.jpg")
 		
 		for cliente,n in clients.items():
-			print "Enviando foto a "+cliente+"..."
+			print(f"Enviando foto a {cliente}...")
 			client.publish(cliente, "refresh."+b64)#"refresh."+f)
 			n+=1
 			if n>=10:
 				clients.pop(cliente)
-				print "Sesion de "+cliente+" expirada."
+				print(f"Sesion de {cliente} expirada.")
 				if len(clients)==0:
 					picx.close()
 			else:
@@ -145,7 +143,7 @@ def on_message(client, userdata, msg):
 	message = str(msg.payload)
 	#print(msg.topic + ": " + message)
 	msg = message.split(' ')
-	print msg
+	print(msg)
 	
 	prefix = msg[0]
 	tipo = msg[1]
@@ -187,7 +185,7 @@ def on_message(client, userdata, msg):
 	elif tipo == "btn":
 		results = database(True, "SELECT Ejecutar FROM Botones WHERE Nombre=\""+mensaje+"\";")
 		for row in results:
-			print "Publicando '{0}' a central...".format(row[0])
+			print(f"Publicando '{row[0]}' a central...")
 			client.publish("central", "btn " + str(row[0]))
 		return
 	elif tipo == "mag":
@@ -199,7 +197,7 @@ def on_message(client, userdata, msg):
 		results = database(True, "SELECT Tiempo FROM Nombres WHERE ID=\""+prefix+"\";")
 		for row in results:
 			client.publish(prefix, "delay " + str(row[0]))
-			print "Delay LED: {0}".format(row[0])
+			print(f"Delay LED: {row[0]}")
 	elif tipo == "enchufe":
 		RoA = 'a'
 		client.publish("central", "btn int "+prefix)
@@ -218,10 +216,10 @@ def on_message(client, userdata, msg):
 				client.publish(mensaje, int(status))
 				database(False, "UPDATE Enchufes SET Status="+str(int(status))+" WHERE ind="+str(row[0])+";")
 		except:
-			print "DB load error"
+			print("DB load error")
 		return
 	elif tipo == "reg":
-		print "Regando "+mensaje+"..."
+		print(f"Regando {mensaje}...")
 		threading.Thread(target=regar, args=(mensaje,)).start()
 		return
 	elif tipo == "humedad1" or tipo == "humedad2" or tipo == "humedad3" or tipo == "humedad4":
@@ -241,9 +239,9 @@ def on_message(client, userdata, msg):
 			if len(clients)==0:
 				picx = picamera.PiCamera()
 			clients.update( {prefix : 0} )
-			#print "Enviando foto a WEB..."
+			#print("Enviando foto a WEB...")
 			#client.publish(prefix, "refresh."+last)
-			#print "Listo!"
+			#print("Listo!")
 		return
 	elif tipo == "?":
 		retraso = 1
@@ -252,8 +250,8 @@ def on_message(client, userdata, msg):
 			for row in results:
 				retraso = row[0]
 		except:
-			print "DB load error"
-		print "Retraso de " + prefix + ": " + str(retraso) + "s"
+			print(f"DB load error")
+		print(f"Retraso de {prefix}: {str(retraso)}s")
 		client.publish(prefix, retraso)
 		return
 		
@@ -261,12 +259,12 @@ def on_message(client, userdata, msg):
 		return
 	
 	if not prefix in modulos:
-		print "Nuevo modulo ("+prefix+")"
+		print(f"Nuevo modulo ({prefix})")
 		modulos.append(prefix)
 		database(False, "INSERT INTO Nombres(ID,Nombre,Tiempo) VALUES (\""+prefix+"\",\""+prefix+"\",5);")
 	
 	if not (prefix+" "+tipo) in mod_tip:
-		print "Nuevo tipo ("+tipo+", de "+prefix+")"
+		print(f"Nuevo tipo ({tipo}, de {prefix})")
 		mod_tip.append(prefix+" "+tipo)
 		try:
 			results = database(True, "SELECT MAX(ind) FROM Tipos")
@@ -283,8 +281,7 @@ def on_message(client, userdata, msg):
 			elif(tipo == "alarma"):
 				database(False, "INSERT INTO Alarma(ind,maxVal,status) VALUES ("+str(val)+",600,0);")
 		except (MySQLdb.Error, MySQLdb.Warning) as e:
-			print "DB load error"
-			print e
+			print(f"DB load error: {e}")
 			
 	if RoA == 'r':
 		enviar(prefix, tipo, mensaje)
@@ -327,7 +324,7 @@ def bucle(ind):
 		x+=1
 		
 def on_publish(mosq, obj, mid):
-	print("mid: " + str(mid))
+	print(f"mid: {str(mid)}")
 
 def alarma():
 	print("Alarma")
@@ -344,24 +341,24 @@ def foto(path):
 while ip()=="":
 	time.sleep(1)
 
-print "Modulos encontrados:"
+print("Modulos encontrados:")
 try:
 	results = database(True, "SELECT * FROM Nombres")
 	for row in results:
 		pre = row[0]
-		print "{0}: {1}".format(pre,row[1])
+		print(f"{pre}: {row[1]}")
 		modulos.append(pre)
 except:
-	print "DB load error"
+	print("DB load error")
 	
-print "Tipos:"
+print("Tipos:")
 try:
 	results = database(True, "SELECT ID,Tipo FROM Tipos")
 	for row in results:
 		mod_tip.append(row[0]+" "+row[1])
-		print "{0}: {1}".format(row[0],row[1])
+		print(f"{row[0]}: {row[1]}")
 except:
-	print "DB load error"
+	print("DB load error")
 
 client = mqtt.Client()
 client.on_connect = on_connect
