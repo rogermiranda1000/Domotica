@@ -54,6 +54,7 @@ void loop() {
 
   if (millis() - acumulado < retraso) return;
   acumulado = millis();
+  Serial.println();
   
   //Check Humidity Sensor
   float humidity = weather.readHumidity();
@@ -94,24 +95,23 @@ void loop() {
     // TODO enviar?
   }
   
-  float speed = weather.getWindSpeedKm();
-  Serial.print("Speed = ");
-  Serial.print(speed);
-  Serial.println("Km/h");
-  connector->publishSelf("central", "viento " + String(speed));
-  
-  int dir = weather.getWindDirection();
-  Serial.print("Direction = ");
-  Serial.println(dir);
-  connector->publishSelf("central", "direccion " + String(dir));
+  unsigned int dir = weather.getWindDirection();
+  if (weather.decodeWindDirection(dir) == -1) Serial.println("Unconnected external sensors.");
+  else {
+    Serial.print("Direction = ");
+    Serial.println(dir);
+    connector->publishSelf("central", "direccion " + String(dir));
+    
+    float speed = weather.getWindSpeedKm();
+    Serial.print("Speed = ");
+    Serial.print(speed);
+    Serial.println("Km/h");
+    connector->publishSelf("central", "viento " + String(speed));
+  }
   
   float rain = weather.getRain();
   Serial.print("Rain = ");
   Serial.print(rain);
   Serial.println("\"/s");
   connector->publishSelf("central", "agua " + String(rain));
-
-  Serial.println();
-
-  delay(1000);
 }
