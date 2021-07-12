@@ -30,18 +30,20 @@ clients = {}
 city = None
 picx = None
 
+mqtt_ip = "192.168.1.79"
+mqtt_port = 1883
+
 def database(obtener, sql):
 	try:
-		db = mariadb.connect("localhost","phpmyadmin","pass","Domotica")
-		cursor = db.cursor()
-		cursor.execute(sql)
-		
-		if obtener == True:
-			return cursor.fetchall()
-		else:
-			db.commit()
+		with mariadb.connect(host="localhost",port=3306,user="phpmyadmin",password="pass",database="Domotica") as db: # login credentials
+			cursor = db.cursor()
+			cursor.execute(sql)
+			
+			if obtener == True:
+				return cursor.fetchall()
+			else:
+				db.commit()
 	except (mariadb.Error, mariadb.Warning) as e:
-		#db.rollback()
 		print(f"DB FAIL: {e}")
 		
 def tiempo(t):
@@ -87,14 +89,6 @@ def enviar(ID, tip, valu):
 		database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',"+str(datetime.datetime.now().second)+","+str(valu)+" FROM Tipos as T WHERE T.ID='"+ID+"' AND T.Tipo='"+tip+"' AND T.RoA='r';")
 	except (mariadb.Error, mariadb.Warning) as e:
 		print(f"DB load error: {e}")
-		
-def get_ip_adress(ifname):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        return socket.inet_ntoa(fcntl.ioctl(
-                s.fileno(),
-                0x8915,
-                struct.pack('256s', ifname[:15])
-        )[20:24])
 
 def cam():
 	global client
@@ -363,7 +357,7 @@ if __name__ == '__main__':
 	client = mqtt.Client()
 	client.on_connect = on_connect
 	client.on_message = on_message
-	client.connect("localhost", 1883, 60)
+	client.connect(mqtt_ip, mqtt_port, 60)
 	client.loop_start()
 
 	thr = threading.Thread(target=cam)
@@ -371,6 +365,7 @@ if __name__ == '__main__':
 	thr.start()
 
 	while True:
+		# TODO update with timer
 		tiemp = datetime.datetime.now()
 		if tiemp.second == 0:
 			tiempo('s')
