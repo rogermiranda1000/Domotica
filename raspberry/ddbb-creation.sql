@@ -19,6 +19,10 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `Domotica`
 --
+DROP DATABASE IF EXISTS Domotica;
+CREATE DATABASE Domotica;
+
+USE Domotica;
 
 -- --------------------------------------------------------
 
