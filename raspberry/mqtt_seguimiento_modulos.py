@@ -125,7 +125,7 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
 	global last
 	global picx
-	message = str(msg.payload)
+	message = str(msg.payload.decode("utf-8"))
 	#print(msg.topic + ": " + message)
 	msg = message.split(' ')
 	print(msg)
