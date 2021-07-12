@@ -11,25 +11,28 @@ import time
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
 
-import MySQLdb
+import mariadb
 
 import datetime
 
-import picamera
+raspberryCam = True
+try:
+	import picamera
+except ImportError:
+	raspberryCam = False
 
 from lxml import html
 import requests
-city = open("lluvia.txt","r")
 
 modulos = []
 mod_tip = []
 clients = {}
-
-picx = picamera.PiCamera()
+city = None
+picx = None
 
 def database(obtener, sql):
 	try:
-		db = MySQLdb.connect("localhost","phpmyadmin","pass","Domotica")
+		db = mariadb.connect("localhost","phpmyadmin","pass","Domotica")
 		cursor = db.cursor()
 		cursor.execute(sql)
 		
@@ -37,7 +40,7 @@ def database(obtener, sql):
 			return cursor.fetchall()
 		else:
 			db.commit()
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
+	except (mariadb.Error, mariadb.Warning) as e:
 		#db.rollback()
 		print(f"DB FAIL: {e}")
 		
@@ -76,13 +79,13 @@ def tiempo(t):
 			print(f"{str(indicador)}: {str(ind)}")
 			
 			database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) VALUES ("+str(indicador)+",\'"+str(tmp)+"\',"+str(hora)+","+str(ind)+")")
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
+	except (mariadb.Error, mariadb.Warning) as e:
 		print(f"DB load error: {e}")
 	
 def enviar(ID, tip, valu):
 	try:
 		database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',"+str(datetime.datetime.now().second)+","+str(valu)+" FROM Tipos as T WHERE T.ID='"+ID+"' AND T.Tipo='"+tip+"' AND T.RoA='r';")
-	except (MySQLdb.Error, MySQLdb.Warning) as e:
+	except (mariadb.Error, mariadb.Warning) as e:
 		print(f"DB load error: {e}")
 		
 def get_ip_adress(ifname):
@@ -92,18 +95,6 @@ def get_ip_adress(ifname):
                 0x8915,
                 struct.pack('256s', ifname[:15])
         )[20:24])
-
-def ip():
-	try:
-	        return get_ip_adress('eth0')
-	except:
-        	pass
-
-	try:
-        	return get_ip_adress('wlan0')
-	except:
-        	pass
-	return ""
 
 def cam():
 	global client
@@ -235,7 +226,7 @@ def on_message(client, userdata, msg):
 		tipo = "humedadPlanta"+tipo[7]
 						
 	elif tipo == "WEB":
-		if mensaje == "foto":
+		if mensaje == "foto" and picx != None:
 			if len(clients)==0:
 				picx = picamera.PiCamera()
 			clients.update( {prefix : 0} )
@@ -280,7 +271,7 @@ def on_message(client, userdata, msg):
 				database(False, "INSERT INTO LED(ind,Status,R,G,B,W) VALUES ("+str(val)+",\"simp\",0,0,0,0);")
 			elif(tipo == "alarma"):
 				database(False, "INSERT INTO Alarma(ind,maxVal,status) VALUES ("+str(val)+",600,0);")
-		except (MySQLdb.Error, MySQLdb.Warning) as e:
+		except (mariadb.Error, mariadb.Warning) as e:
 			print(f"DB load error: {e}")
 			
 	if RoA == 'r':
@@ -331,6 +322,10 @@ def alarma():
 	
 def foto(path):
 	global picx
+	
+	if picx == None:
+		return
+	
 	#picx.start_preview()
 	picx.capture(path)
 	#picx.stop_preview()
@@ -338,47 +333,52 @@ def foto(path):
 	with open(path, "rb") as image_file:
 		return base64.b64encode(image_file.read())
 
-while ip()=="":
-	time.sleep(1)
 
-print("Modulos encontrados:")
-try:
-	results = database(True, "SELECT * FROM Nombres")
-	for row in results:
-		pre = row[0]
-		print(f"{pre}: {row[1]}")
-		modulos.append(pre)
-except:
-	print("DB load error")
-	
-print("Tipos:")
-try:
-	results = database(True, "SELECT ID,Tipo FROM Tipos")
-	for row in results:
-		mod_tip.append(row[0]+" "+row[1])
-		print(f"{row[0]}: {row[1]}")
-except:
-	print("DB load error")
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
-client.connect(ip(), 1883, 60)
-client.loop_start()
+if __name__ == '__main__':
+	city = open("lluvia.txt","r")
 
-thr = threading.Thread(target=cam)
-thr.daemon = True
-thr.start()
+	if raspberryCam:
+		picx = picamera.PiCamera()
 
-while True:
-	tiemp = datetime.datetime.now()
-	if tiemp.second == 0:
-		tiempo('s')
-		if tiemp.minute == 0:
-			tiempo('m')
-			if tiemp.hour == 0:
-				tiempo('h')
-				if tiemp.day == 1:
-					tiempo('d')
-	
-	time.sleep(1)
+	print("Modulos encontrados:")
+	try:
+		results = database(True, "SELECT * FROM Nombres")
+		for row in results:
+			pre = row[0]
+			print(f"{pre}: {row[1]}")
+			modulos.append(pre)
+	except:
+		print("DB load error")
+		
+	print("Tipos:")
+	try:
+		results = database(True, "SELECT ID,Tipo FROM Tipos")
+		for row in results:
+			mod_tip.append(row[0]+" "+row[1])
+			print(f"{row[0]}: {row[1]}")
+	except:
+		print("DB load error")
+
+	client = mqtt.Client()
+	client.on_connect = on_connect
+	client.on_message = on_message
+	client.connect("localhost", 1883, 60)
+	client.loop_start()
+
+	thr = threading.Thread(target=cam)
+	thr.daemon = True
+	thr.start()
+
+	while True:
+		tiemp = datetime.datetime.now()
+		if tiemp.second == 0:
+			tiempo('s')
+			if tiemp.minute == 0:
+				tiempo('m')
+				if tiemp.hour == 0:
+					tiempo('h')
+					if tiemp.day == 1:
+						tiempo('d')
+		
+		time.sleep(1)
