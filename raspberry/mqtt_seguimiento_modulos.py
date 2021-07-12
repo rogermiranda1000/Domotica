@@ -3,6 +3,9 @@ import socket
 import fcntl
 import struct
 
+import os
+import base64
+import threading
 import time
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
@@ -10,13 +13,6 @@ import paho.mqtt.publish as publish
 import MySQLdb
 
 import datetime
-
-from twilio.rest import Client
-account_sid = '…' # Found on Twilio Console Dashboard
-auth_token = '…' # Found on Twilio Console Dashboard
-myPhone = '+34…' # Phone number you used to verify your Twilio account
-TwilioNumber = '+34…' # Phone number given to you by Twilio
-client = Client(account_sid, auth_token)
 
 import picamera
 
@@ -26,12 +22,14 @@ city = open("lluvia.txt","r")
 
 modulos = []
 mod_tip = []
+clients = {}
 
-db = MySQLdb.connect("localhost","phpmyadmin","pass","Domotica")
-cursor = db.cursor()
+picx = picamera.PiCamera()
 
 def database(obtener, sql):
 	try:
+		db = MySQLdb.connect("localhost","phpmyadmin","pass","Domotica")
+		cursor = db.cursor()
 		cursor.execute(sql)
 		
 		if obtener == True:
@@ -39,7 +37,7 @@ def database(obtener, sql):
 		else:
 			db.commit()
 	except (MySQLdb.Error, MySQLdb.Warning) as e:
-		db.rollback()
+		#db.rollback()
 		print "DB FAIL"
 		print e
 		
@@ -47,6 +45,9 @@ def tiempo(t):
 	print "Tiempo limite, actualizando... [" + t + "]"
 	try:
 		results = database(True, "SELECT ind,Val FROM Valor WHERE Tiempo=\'"+t+"\'")
+		if results == None:
+			return
+
 		total = {}
 		num = {}
 		for row in results:
@@ -71,7 +72,6 @@ def tiempo(t):
 				hora = datetime.datetime.now().day
 			elif t == 'd':
 				return
-				
 			ind = total[indicador]
 			print str(indicador) + ": " + str(ind)
 			
@@ -79,14 +79,10 @@ def tiempo(t):
 	except (MySQLdb.Error, MySQLdb.Warning) as e:
 		print "DB load error"
 		print e
-		
+	
 def enviar(ID, tip, valu):
 	try:
-		results = database(True, "SELECT ind FROM Tipos WHERE ID=\""+ID+"\" AND Tipo=\""+tip+"\" AND RoA='r';")
-		ind = 0
-		for row in results:
-			ind = row[0]
-		database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) VALUES ("+str(ind)+",\"s\","+str(datetime.datetime.now().second)+","+str(valu)+")")
+		database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',"+str(datetime.datetime.now().second)+","+str(valu)+" FROM Tipos as T WHERE T.ID='"+ID+"' AND T.Tipo='"+tip+"' AND T.RoA='r';")
 	except (MySQLdb.Error, MySQLdb.Warning) as e:
 		print "DB load error"
 		print e
@@ -111,11 +107,41 @@ def ip():
         	pass
 	return ""
 
+def cam():
+	global client
+	global clients
+	global picx
+	
+	while True:		
+		b64 = foto("/home/pi/Pictures/img.jpg")
+		
+		for cliente,n in clients.items():
+			print "Enviando foto a "+cliente+"..."
+			client.publish(cliente, "refresh."+b64)#"refresh."+f)
+			n+=1
+			if n>=10:
+				clients.pop(cliente)
+				print "Sesion de "+cliente+" expirada."
+				if len(clients)==0:
+					picx.close()
+			else:
+				clients.update( {cliente : n} )
+
+def regar(cliente):
+	global client
+	for x in range(4):
+		client.publish(cliente,"me"+str(x+1));
+	time.sleep(2*60)
+	for x in range(4):
+		client.publish(cliente,"ma"+str(x+1));
+
 def on_connect(client, userdata, flags, rc):
 	#print("Conectado. " + str(rc))
 	client.subscribe("central")
 
 def on_message(client, userdata, msg):
+	global last
+	global picx
 	message = str(msg.payload)
 	#print(msg.topic + ": " + message)
 	msg = message.split(' ')
@@ -194,11 +220,15 @@ def on_message(client, userdata, msg):
 		except:
 			print "DB load error"
 		return
+	elif tipo == "reg":
+		print "Regando "+mensaje+"..."
+		threading.Thread(target=regar, args=(mensaje,)).start()
+		return
 	elif tipo == "humedad1" or tipo == "humedad2" or tipo == "humedad3" or tipo == "humedad4":
-		results2 = database(True, "SELECT checkHumidity,humedad,checkRain,rangoCheck,probCheck FROM Riego WHERE ID='"+mensaje+"';")
-		for row2 in results2:
-			if row2[0] == True and (row2[2] == False or clima(row2[3], row2[4]) == True):
-				if row2[1]>mensaje:
+		results = database(True, "SELECT checkHumidity,humedad,checkRain,rangoCheck,probCheck FROM Riego WHERE ID='"+mensaje+"';")
+		for row in results:
+			if row[0] == True and (row[2] == False or clima(row[3], row[4]) == True):
+				if row[1]>mensaje:
 					client.publish(prefix, 'me'+tipo[7])
 				else:
 					client.publish(prefix, 'ma'+tipo[7])
@@ -208,10 +238,12 @@ def on_message(client, userdata, msg):
 						
 	elif tipo == "WEB":
 		if mensaje == "foto":
-			print "Enviando foto a WEB..."
-			foto("/var/www/html/img.jpg")
-			print "Listo!"
-			client.publish(prefix, "refresh")
+			if len(clients)==0:
+				picx = picamera.PiCamera()
+			clients.update( {prefix : 0} )
+			#print "Enviando foto a WEB..."
+			#client.publish(prefix, "refresh."+last)
+			#print "Listo!"
 		return
 	elif tipo == "?":
 		retraso = 1
@@ -259,19 +291,11 @@ def on_message(client, userdata, msg):
 
 def gas(ind):
 	database(False, "UPDATE Alarma SET gas=1 WHERE ind="+str(ind)+";")
-    client.messages.create(
-      to=myPhone,
-      from_=TwilioNumber,
-      body='Hay mucho gas en su casa.')
 
 def fuego():
 	results = database(True, "SELECT ind FROM Tipos WHERE ID=\""+prefix+"\";")
 	for row in results:
 		database(False, "UPDATE Alarma SET fuego=1 WHERE ind="+str(row[0])+";")
-    client.messages.create(
-      to=myPhone,
-      from_=TwilioNumber,
-      body='Su casa esta ardiendo.')
 
 def clima(rango, prob):
 	page = requests.get(city.read(), timeout = 15.0)
@@ -306,17 +330,16 @@ def on_publish(mosq, obj, mid):
 	print("mid: " + str(mid))
 
 def alarma():
-    client.messages.create(
-      to=myPhone,
-      from_=TwilioNumber,
-      body='Movimiento en su casa.')
+	print("Alarma")
 	
 def foto(path):
-	with picamera.PiCamera() as picx:
-		#picx.start_preview()
-		picx.capture(path)
-		#picx.stop_preview()
-		picx.close()
+	global picx
+	#picx.start_preview()
+	picx.capture(path)
+	#picx.stop_preview()
+	#picx.close()
+	with open(path, "rb") as image_file:
+		return base64.b64encode(image_file.read())
 
 while ip()=="":
 	time.sleep(1)
@@ -346,13 +369,15 @@ client.on_message = on_message
 client.connect(ip(), 1883, 60)
 client.loop_start()
 
+thr = threading.Thread(target=cam)
+thr.daemon = True
+thr.start()
+
 while True:
-	#client.publish("led1", "switch")
-	
 	tiemp = datetime.datetime.now()
 	if tiemp.second == 0:
 		tiempo('s')
-		if tiemp.minute == 0: 
+		if tiemp.minute == 0:
 			tiempo('m')
 			if tiemp.hour == 0:
 				tiempo('h')
