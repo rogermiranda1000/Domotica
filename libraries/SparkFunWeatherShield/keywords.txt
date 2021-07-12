@@ -1,0 +1,10 @@
+SparkFunWeatherShield	KEYWORD1
+ERROR_I2C_TIMEOUT	KEYWORD3
+readHumidity	KEYWORD2
+readTemperature	KEYWORD2
+readPressure	KEYWORD2
+getLightLevel	KEYWORD2
+getBatteryLevel	KEYWORD2
+getWindSpeed	KEYWORD2
+getWindDirection	KEYWORD2
+getRain	KEYWORD2

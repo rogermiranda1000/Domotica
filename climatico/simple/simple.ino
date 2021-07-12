@@ -1,77 +1,28 @@
-//#include <DHT.h>
-
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <SPI.h>
 #include <SD.h>
 #include <DHT.h>
+
 String ssid = "";
 String password = "";
 char* mqtt_server = "192.168.1.230";
 char* mqtt_server2 = "192.168.1.229";
 bool dest = false;
+
 WiFiClient espClient;
 PubSubClient client(espClient);
+
 File myFile;
+
 int retraso = 1000;
 int pasado = 0;
-char* ID = "CLIM02";
+char* ID = "CLIM01";
 
-const int luz = D0;
-const int agua = D1;
-const int sensores = A0;
-
-//#define DHTPIN D4
-//#define DHTTYPE DHT11
-//DHT dht(DHTPIN, DHTTYPE);
-
-void setup() {
-  Serial.begin(9600);
-  pinMode(luz, OUTPUT);
-  pinMode(agua, OUTPUT);
-  pinMode(sensores, INPUT);
-  //dht.begin();
-  
-  conectar();
-}
-
-void loop() {
-  if (!client.connected()) reconnect();
-  client.loop();
-  
-  /*float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  Serial.println("Humedad: " + String(h) + "%");
-  Serial.println("Temperatura: " + String(t) + "ºC");*/
-  
-  //lectura nivel del agua
-  digitalWrite(agua, HIGH);
-  delay(400);
-  int a = analogRead(sensores);
-  Serial.println("Agua: " + String(a));
-  delay(100);
-  digitalWrite(agua, LOW);
-
-  //lectura luz
-  digitalWrite(luz, HIGH);
-  delay(400);
-  float l = analogRead(sensores);
-  l /= (float) 1023;
-  l *= (float) 100;
-  Serial.println("Luz: " + String(l) + "%");
-  delay(100);
-  digitalWrite(luz, LOW);
-
-  pasado += 1000;
-  if(pasado >= retraso) {
-    client.publish("central", (const char*) (String(ID) + " luz " + String(l)).c_str());
-    client.publish("central", (const char*) (String(ID) + " agua " + String(a)).c_str());
-    pasado = 0;
-  }
-}
-
-
-
+const int DHTPIN = 5;
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+const int pResistor = A0;
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String mensaje = "";
@@ -105,7 +56,11 @@ void cambiarDestino() {
   else client.setServer(mqtt_server2, 1883);
 }
 
-void conectar() {
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+  pinMode(pResistor, INPUT);
+
   if (!SD.begin(4)) {
     Serial.println("Error en la lectura de la MicroSD.");
   }
@@ -144,4 +99,41 @@ void conectar() {
   
   cambiarDestino();
   client.setCallback(callback);
+}
+
+void loop() {
+  if (!client.connected()) reconnect();
+  client.loop();
+
+  // Leemos la humedad relativa
+  float h = dht.readHumidity();
+  // Leemos la temperatura en grados centígrados (por defecto)
+  float t = dht.readTemperature();
+  // Comprobamos si ha habido algún error en la lectura
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Error obteniendo los datos del sensor DHT11");
+    return;
+  }
+  Serial.println(String(h) + "%");
+  Serial.println(String(t) + "ºC");
+  
+  int value = analogRead(pResistor);
+  double per = (double) value/1024;
+  per *= 100;
+  Serial.print(String(value) + " - ");
+  Serial.print(per, 2);
+  Serial.println("% luz");
+  Serial.println("---");
+  
+  pasado += 1000;
+  if(pasado >= retraso) {
+    client.publish("central", (const char*) (String(ID) + " luz " + String(per)).c_str());
+    client.publish("central", (const char*) (String(ID) + " temperatura " + String(t)).c_str());
+    client.publish("central", (const char*) (String(ID) + " humedad " + String(h)).c_str());
+    pasado = 0;
+  }
+  
+  //client.publish("central", "MOV");
+
+  delay(500);
 }
