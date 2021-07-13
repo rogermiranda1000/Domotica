@@ -20,14 +20,15 @@ const char *const WIFI_PASS = NULL;//"...";
 DomoticConnector *connector;
 WeatherShield weather;
 
-unsigned int retraso = 1000, acumulado;
+volatile unsigned int retraso = 1000;
+unsigned int acumulado;
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  retraso = 0;
-  for (int i=0;i<length;i++) retraso = retraso*10 + ((char)payload[i])-'0'; // atoi
+  unsigned int value = 0;
+  for (int i=0;i<length;i++) value = value*10 + ((char)payload[i])-'0'; // atoi
   
-  Serial.println("Retraso de " + String(retraso) + "s");
-  retraso = 1000*retraso;
+  Serial.println("Retraso de " + String(value) + "s");
+  retraso = 1000*value;
 }
 
 void onReconnect(void) {
@@ -76,7 +77,7 @@ void loop() {
     float pressure = weather.readPressure();
     Serial.print("Pressure = ");
     Serial.print(pressure);
-    Serial.println("Pa");
+    Serial.println("hPa");
     connector->publishSelf("central", "presion " + String(pressure));
 
     // light and battery doesn't use I2C, but if the I2C it's not working it's very likely (due to internal connections) that light nor battery will work
