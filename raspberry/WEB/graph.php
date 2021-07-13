@@ -110,20 +110,27 @@
             }
             
             $TEXTO = array();
-            foreach($ind as $x) {
-				$valores = "";
-                $index = array_search($x, $ind);
-                $sql = "SELECT Time,Val FROM Valor WHERE ind=\"".$x."\" AND Tiempo=\"".$_GET['t']."\" ORDER BY Valor.Time ASC;";
-                $result = $conn->query($sql);
-                if ($result->num_rows > 0) {
-                    while($row = $result->fetch_assoc()) {
-						$valores .= "[".$row["Time"].",".$row["Val"]."], ";
-                    }
-                }
-                
-                $valores = substr($valores, 0, -2); // subtract last ', '
-                array_push($TEXTO, "{ name: '".$nombre[$index]."', data: [".$valores."] }");
-            }
+			foreach($ind as $x) {
+				foreach(array('Val','max','min') as $checking) {
+					$valores = "";
+					$index = array_search($x, $ind);
+					$sql = "SELECT Time,".$checking." FROM Valor WHERE ind=\"".$x."\" AND Tiempo=\"".$_GET['t']."\" ORDER BY Valor.Time ASC;";
+					$result = $conn->query($sql);
+					if ($result->num_rows > 0) {
+						while($row = $result->fetch_assoc()) {
+							if ($row[$checking] !== NULL) $valores .= "[".$row["Time"].",".$row[$checking]."], ";
+						}
+					}
+					
+					if (strlen($valores) > 0) {
+						$valores = substr($valores, 0, -2); // subtract last ', '
+						$json = "{ name: '".$nombre[$index];
+						if ($checking !== 'Val') $json .= " (".$checking.")";
+						$json .= "', data: [".$valores."] }";
+						array_push($TEXTO, $json);
+					}
+				}
+			}
             $conn->close();
         ?>
 
