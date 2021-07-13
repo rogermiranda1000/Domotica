@@ -46,41 +46,10 @@ def database(obtener, sql):
 	except (mariadb.Error, mariadb.Warning) as e:
 		print(f"DB FAIL: {e}")
 		
-def tiempo(t):
-	print(f"Tiempo limite, actualizando... [{t}]")
+def tiempo(command):
+	print(f"Tiempo limite, actualizando...")
 	try:
-		results = database(True, "SELECT ind,Val FROM Valor WHERE Tiempo=\'"+t+"\'")
-		if results == None:
-			return
-
-		total = {}
-		num = {}
-		for row in results:
-			ind = int(row[0])
-			if not ind in total:
-				total[ind] = 0
-				num[ind] = 0
-			total[ind] += row[1]
-			num[ind] += 1
-		database(False, "DELETE FROM Valor WHERE Tiempo=\'"+t+"\'")
-		for indicador in total.keys():
-			tmp = ''
-			hora = datetime.datetime.now().minute
-			total[indicador] /= num[indicador]
-			if t == 's':
-				tmp = 'm'
-			elif t == 'm':
-				tmp = 'h'
-				hora = datetime.datetime.now().hour
-			elif t == 'h':
-				tmp = 'd'
-				hora = datetime.datetime.now().day
-			elif t == 'd':
-				return
-			ind = total[indicador]
-			print(f"{str(indicador)}: {str(ind)}")
-			
-			database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) VALUES ("+str(indicador)+",\'"+str(tmp)+"\',"+str(hora)+","+str(ind)+")")
+		database(False, f"CALL {command}();")
 	except (mariadb.Error, mariadb.Warning) as e:
 		print(f"DB load error: {e}")
 	
@@ -368,12 +337,12 @@ if __name__ == '__main__':
 		# TODO update with timer
 		tiemp = datetime.datetime.now()
 		if tiemp.second == 0:
-			tiempo('s')
+			tiempo('updateSeconds')
 			if tiemp.minute == 0:
-				tiempo('m')
+				tiempo('updateMinutes')
 				if tiemp.hour == 0:
-					tiempo('h')
+					tiempo('updateHours')
 					if tiemp.day == 1:
-						tiempo('d')
+						tiempo('updateDays')
 		
 		time.sleep(1)
