@@ -30,32 +30,55 @@ clients = {}
 city = None
 picx = None
 
+# mosquitto login credentials
 mqtt_ip = "192.168.1.79"
 mqtt_port = 1883
 
+# sql login credentials
+sql_host = "localhost"
+sql_port = 3306
+sql_user = "phpmyadmin"
+sql_password = "pass"
+sql_database = "Domotica"
+
+sql_credentials = {'host': sql_host, 'port': sql_port, 'user': sql_user, 'password': sql_password, 'database': sql_database}
+
 def database(obtener, sql):
+	global sql_credentials
+	
 	try:
-		with mariadb.connect(host="localhost",port=3306,user="phpmyadmin",password="pass",database="Domotica") as db: # login credentials
-			cursor = db.cursor()
+		with mariadb.connect(**sql_credentials) as connection:
+			cursor = connection.cursor()
 			cursor.execute(sql)
 			
 			if obtener == True:
 				return cursor.fetchall()
 			else:
-				db.commit()
+				connection.commit()
 	except (mariadb.Error, mariadb.Warning) as e:
-		print(f"DB FAIL: {e}")
+		print(f"SQL FAIL: {e}")
 	
 def enviar(ID, tip, valu):
+	global sql_credentials
+	
 	try:
-		database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',"+str(datetime.datetime.now().second)+","+str(valu)+" FROM Tipos as T WHERE T.ID='"+ID+"' AND T.Tipo='"+tip+"' AND T.RoA='r';")
+		with mariadb.connect(**sql_credentials) as connection:
+			cursor = connection.cursor(prepared=True)
+			cursor.execute("INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',%s,%s FROM Tipos as T WHERE T.ID=%s AND T.Tipo=%s AND T.RoA='r';",
+				(datetime.datetime.now().second, valu, ID, tip))
+			
+			connection.commit()
 	except (mariadb.Error, mariadb.Warning) as e:
-		print(f"DB load error: {e}")
+		print(f"PREPARED SQL FAIL: {e}")
 
+# PRE: Call after 'picx = picamera.PiCamera()'
 def cam():
 	global client
 	global clients
 	global picx
+	
+	if picx == None:
+		return
 	
 	while True:		
 		b64 = foto("/home/pi/Pictures/img.jpg")
@@ -231,7 +254,8 @@ def on_message(client, userdata, msg):
 			print(f"DB load error: {e}")
 			
 	if RoA == 'r':
-		enviar(prefix, tipo, mensaje)
+		# insert the values in a new thread
+		threading.Thread(target=enviar, args=(prefix, tipo, mensaje)).start()
 
 def gas(ind):
 	database(False, "UPDATE Alarma SET gas=1 WHERE ind="+str(ind)+";")
