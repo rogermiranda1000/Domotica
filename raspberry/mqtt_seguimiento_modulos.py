@@ -45,44 +45,6 @@ def database(obtener, sql):
 				db.commit()
 	except (mariadb.Error, mariadb.Warning) as e:
 		print(f"DB FAIL: {e}")
-		
-def tiempo(t):
-	print(f"Tiempo limite, actualizando... [{t}]")
-	try:
-		results = database(True, "SELECT ind,Val FROM Valor WHERE Tiempo=\'"+t+"\'")
-		if results == None:
-			return
-
-		total = {}
-		num = {}
-		for row in results:
-			ind = int(row[0])
-			if not ind in total:
-				total[ind] = 0
-				num[ind] = 0
-			total[ind] += row[1]
-			num[ind] += 1
-		database(False, "DELETE FROM Valor WHERE Tiempo=\'"+t+"\'")
-		for indicador in total.keys():
-			tmp = ''
-			hora = datetime.datetime.now().minute
-			total[indicador] /= num[indicador]
-			if t == 's':
-				tmp = 'm'
-			elif t == 'm':
-				tmp = 'h'
-				hora = datetime.datetime.now().hour
-			elif t == 'h':
-				tmp = 'd'
-				hora = datetime.datetime.now().day
-			elif t == 'd':
-				return
-			ind = total[indicador]
-			print(f"{str(indicador)}: {str(ind)}")
-			
-			database(False, "INSERT INTO Valor(ind,Tiempo,Time,Val) VALUES ("+str(indicador)+",\'"+str(tmp)+"\',"+str(hora)+","+str(ind)+")")
-	except (mariadb.Error, mariadb.Warning) as e:
-		print(f"DB load error: {e}")
 	
 def enviar(ID, tip, valu):
 	try:
@@ -358,22 +320,8 @@ if __name__ == '__main__':
 	client.on_connect = on_connect
 	client.on_message = on_message
 	client.connect(mqtt_ip, mqtt_port, 60)
-	client.loop_start()
+	client.loop_forever()
 
 	thr = threading.Thread(target=cam)
 	thr.daemon = True
 	thr.start()
-
-	while True:
-		# TODO update with timer
-		tiemp = datetime.datetime.now()
-		if tiemp.second == 0:
-			tiempo('s')
-			if tiemp.minute == 0:
-				tiempo('m')
-				if tiemp.hour == 0:
-					tiempo('h')
-					if tiemp.day == 1:
-						tiempo('d')
-		
-		time.sleep(1)

@@ -9,6 +9,7 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
+SET GLOBAL event_scheduler = ON; -- we use schedulers to update the values
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -154,7 +155,7 @@ CREATE TABLE `Tipos` (
   `ind` int(11) NOT NULL,
   `ID` tinytext NOT NULL,
   `Tipo` tinytext NOT NULL,
-  `RoA` varchar(1) NOT NULL
+  `RoA` ENUM('r', 'a') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -183,9 +184,10 @@ INSERT INTO `Usuarios` (`Nombre`, `Pass`) VALUES
 
 CREATE TABLE `Valor` (
   `ind` int(11) NOT NULL,
-  `Tiempo` varchar(1) NOT NULL,
+  `Tiempo` ENUM('s', 'm', 'h', 'd') NOT NULL,
   `Time` tinyint(4) NOT NULL,
-  `Val` int(11) NOT NULL
+  `Val` int(11),
+  PRIMARY KEY (ind,Tiempo,`Time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
@@ -200,11 +202,66 @@ ALTER TABLE `Tipos`
   ADD UNIQUE KEY `ind` (`ind`),
   ADD KEY `ind_2` (`ind`);
 
---
--- Indices de la tabla `Valor`
---
-ALTER TABLE `Valor`
-  ADD KEY `ind` (`ind`);
+
+-- Procedures
+DROP PROCEDURE IF EXISTS updateGeneric;
+CREATE PROCEDURE updateGeneric (IN unit ENUM('s', 'm', 'h', 'd'))
+BEGIN
+    INSERT INTO Valor(ind, Tiempo, Time, Val)
+        SELECT ind, (unit+1), MINUTE(NOW()) AS tiempo, AVG(Val) AS mean
+        FROM Valor
+        WHERE Tiempo=unit
+        GROUP BY ind;
+
+    DELETE FROM Valor
+    WHERE Tiempo=unit;
+END;
+
+DROP PROCEDURE IF EXISTS updateSeconds;
+CREATE PROCEDURE updateSeconds ()
+BEGIN
+    CALL updateGeneric('s');
+END;
+
+DROP PROCEDURE IF EXISTS updateMinutes;
+CREATE PROCEDURE updateMinutes ()
+BEGIN
+    CALL updateGeneric('m');
+END;
+
+DROP PROCEDURE IF EXISTS updateHours;
+CREATE PROCEDURE updateHours ()
+BEGIN
+    CALL updateGeneric('h');
+END;
+
+DROP PROCEDURE IF EXISTS updateDays;
+CREATE PROCEDURE updateDays ()
+BEGIN
+    -- la base de datos guarda hasta 1 mes; directamente eliminamos los datos
+    DELETE FROM Valor
+    WHERE Tiempo='d';
+END;
+
+
+-- Schedulers
+DROP EVENT IF EXISTS updater;
+CREATE EVENT updater
+ON SCHEDULE EVERY 1 MINUTE STARTS '2021-07-13 00:00:00'
+DO BEGIN
+    CALL updateSeconds();
+    IF MINUTE(NOW()) = 0 THEN
+        CALL updateMinutes();
+
+        IF HOUR(NOW()) = 0 THEN
+            CALL updateHours();
+
+            IF DAY(NOW()) = 1 THEN
+                CALL updateDays();
+            END IF;
+        END IF;
+    END IF;
+END;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
