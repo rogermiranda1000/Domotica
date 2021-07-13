@@ -57,7 +57,6 @@
                     //array_push($ind, $row["Tipo"]);
                 }
             }
-            $conn->close();
         ?>
     </select>
 
@@ -74,26 +73,16 @@
     <script>
         <?php if($_GET['g']=="" && $_GET['t']=="") {echo"</script></body></html>"; die;} ?>
         document.getElementById("container").style.display = "block";
-        var unidades = "";
+        var unidades = "?";
         if(<?php echo "'".$_GET['g']."'"; ?>=="Temperatura") unidades = '°C';
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Humedad") unidades = '%';
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Presión") unidades = 'hPa';
+        else if(<?php echo "'".$_GET['g']."'"; ?>=="Luz") unidades = '%';
+        else if(<?php echo "'".$_GET['g']."'"; ?>=="Agua") unidades = 'mm/h';
         
         <?php
-            $servername = "localhost";
-            $username = "phpmyadmin";
-            $password = "pass";
-            $dbname = "Domotica";
-
-            // Create connection
-            $conn = new mysqli($servername, $username, $password, $dbname);
-            // Check connection
-            if ($conn->connect_error) {
-                die("Connection failed: " . $conn->connect_error);
-            }
-            
             $sql = "SELECT ind,ID FROM Tipos WHERE Tipo=\"".strtolower($_GET['g'])."\";";
-			if($_GET['g']=="Humedad") $sql = "SELECT ind,ID FROM Tipos WHERE Tipo='humedadPlanta1' OR Tipo='humedadPlanta2' OR Tipo='humedadPlanta3' OR Tipo='humedadPlanta4';";
+			if($_GET['g']=="Humedad") $sql = "SELECT ind,ID FROM Tipos WHERE Tipo='humedadPlanta1' OR Tipo='humedadPlanta2' OR Tipo='humedadPlanta3' OR Tipo='humedadPlanta4' OR Tipo='humedad';";
             $result = $conn->query($sql);
             $ind = array();
             $IDs = array();
