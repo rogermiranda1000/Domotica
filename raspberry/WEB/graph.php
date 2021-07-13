@@ -110,38 +110,18 @@
             }
             
             $TEXTO = array();
-            $tmp = 0;
-            if($_GET['t']=="s" || $_GET['t']=="m") $tmp = 60;
-            else if($_GET['t']=="h") $tmp = 24;
-            else if($_GET['t']=="d") $tmp = 30;
             foreach($ind as $x) {
-                $val = array();
+				$valores = "";
                 $index = array_search($x, $ind);
                 $sql = "SELECT Time,Val FROM Valor WHERE ind=\"".$x."\" AND Tiempo=\"".$_GET['t']."\" ORDER BY Valor.Time ASC;";
                 $result = $conn->query($sql);
                 if ($result->num_rows > 0) {
-                    $z = 0;
                     while($row = $result->fetch_assoc()) {
-                        while($row["Time"] > $z) {
-                            if($val[$z-1]=="") array_push($val, 0);
-                            else array_push($val, $val[$z-1]);
-                            //array_push($val, 0);
-                            $z++;
-                        }
-                        if($row["Time"] == $z) {
-                            array_push($val, $row["Val"]);
-                            $z++;
-                        }
-                    }
-                    while($z<$tmp) {
-                        array_push($val, 0);
-                        $z++;
+						$valores .= "[".$row["Time"].",".$row["Val"]."], ";
                     }
                 }
                 
-                $valores = "";
-                for($y = 0; $y != $tmp; $y++) $valores .= $val[$y].", ";
-                $valores = substr($valores, 0, -2);
+                $valores = substr($valores, 0, -2); // subtract last ', '
                 array_push($TEXTO, "{ name: '".$nombre[$index]."', data: [".$valores."] }");
             }
             $conn->close();
@@ -160,6 +140,15 @@ Highcharts.chart('container', {
     }
   },
   xAxis: {
+	min: <?php echo (($_GET['t']=="d") ? 1 : 0); ?>,
+	max: <?php 
+		$tmp = null;
+		if($_GET['t']=="s" || $_GET['t']=="m") $tmp = 59;
+		else if($_GET['t']=="h") $tmp = 23;
+		else if($_GET['t']=="d") $tmp = 31;
+		
+		echo $tmp;
+	?>,
     title: {
       text: 'Tiempo ['+<?php echo "'".$_GET['t']."'"; ?>+']'
     }
@@ -169,6 +158,7 @@ Highcharts.chart('container', {
       dataLabels: {
         enabled: true
       },
+	  //allowPointSelect: true,
       enableMouseTracking: true
     }
   },
