@@ -9,7 +9,6 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
-SET GLOBAL event_scheduler = ON; -- we use schedulers to update the values
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -220,19 +219,19 @@ END;
 DROP PROCEDURE IF EXISTS updateSeconds;
 CREATE PROCEDURE updateSeconds ()
 BEGIN
-    CALL updateGeneric('s', MINUTE(NOW()));
+    CALL updateGeneric('s', MINUTE( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous minute (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateMinutes;
 CREATE PROCEDURE updateMinutes ()
 BEGIN
-    CALL updateGeneric('m', HOUR(NOW()));
+    CALL updateGeneric('m', HOUR( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous hour (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateHours;
 CREATE PROCEDURE updateHours ()
 BEGIN
-    CALL updateGeneric('h', DAY(NOW()));
+    CALL updateGeneric('h', DAY( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous day (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateDays;

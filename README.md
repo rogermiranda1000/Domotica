@@ -5,7 +5,7 @@ Crea tu propia casa domótica mediante Arduino y Raspberry
 - Necesitas poder [cargar código en la placa Lolin NodeMCU](https://www.instructables.com/Get-Started-With-ESP8266-NodeMCU-Lolin-V3/)
 - Para la comunicación MQTT, arduino necesita [Libreria PubSubClient](https://pubsubclient.knolleary.net/)
 - Para la recepción de MQTT, el módulo central necesita [Mosquitto](https://mosquitto.org/blog/2013/01/mosquitto-debian-repository/). En '/etc/mosquitto/conf.d/mosquitto.conf' hay que indicarle la IP estática ('listener 1883 192.168.1.229' y 'allow_anonymous true').
-- Se necesita MariaDB (el archivo a ejecutar para cargar la base de datos se encuentra en el [Módulo central](https://github.com/rogermiranda1000/Domotica#m%C3%B3dulo-central))
+- Se necesita MariaDB (el archivo a ejecutar para cargar la base de datos se encuentra en el [Módulo central](https://github.com/rogermiranda1000/Domotica#m%C3%B3dulo-central)). En su fichero de configuración hay que activar los schedulers (en linux, '/etc/mysql/my.cnf' y poner '[mariadb] event_scheduler=ON').
 - El módulo central necesita una IP estática (busca como configurarlo dependiendo de su sistema)
 - En la carpeta [libraries](https://github.com/rogermiranda1000/Domotica/tree/master/libraries) tienes las librerias que has de importar a Arduino
 
