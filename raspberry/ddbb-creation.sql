@@ -205,10 +205,10 @@ ALTER TABLE `Tipos`
 
 -- Procedures
 DROP PROCEDURE IF EXISTS updateGeneric;
-CREATE PROCEDURE updateGeneric (IN unit ENUM('s', 'm', 'h', 'd'))
+CREATE PROCEDURE updateGeneric (IN unit ENUM('s', 'm', 'h', 'd'), IN time TINYINT)
 BEGIN
     INSERT INTO Valor(ind, Tiempo, Time, Val)
-        SELECT ind, (unit+1), MINUTE(NOW()) AS tiempo, AVG(Val) AS mean
+        SELECT ind, (unit+1), time, AVG(Val) AS mean
         FROM Valor
         WHERE Tiempo=unit
         GROUP BY ind;
@@ -220,19 +220,19 @@ END;
 DROP PROCEDURE IF EXISTS updateSeconds;
 CREATE PROCEDURE updateSeconds ()
 BEGIN
-    CALL updateGeneric('s');
+    CALL updateGeneric('s', MINUTE(NOW()));
 END;
 
 DROP PROCEDURE IF EXISTS updateMinutes;
 CREATE PROCEDURE updateMinutes ()
 BEGIN
-    CALL updateGeneric('m');
+    CALL updateGeneric('m', HOUR(NOW()));
 END;
 
 DROP PROCEDURE IF EXISTS updateHours;
 CREATE PROCEDURE updateHours ()
 BEGIN
-    CALL updateGeneric('h');
+    CALL updateGeneric('h', DAY(NOW()));
 END;
 
 DROP PROCEDURE IF EXISTS updateDays;
@@ -250,6 +250,7 @@ CREATE EVENT updater
 ON SCHEDULE EVERY 1 MINUTE STARTS '2021-07-13 00:00:00'
 DO BEGIN
     CALL updateSeconds();
+
     IF MINUTE(NOW()) = 0 THEN
         CALL updateMinutes();
 
