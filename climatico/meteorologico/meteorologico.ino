@@ -10,7 +10,7 @@
   #define DEBUG_PRINTLN(str)
 #endif
 
-#define MQTT_SERVER "192.168.1.229"
+#define MQTT_SERVER "192.168.1.79"
 #define MQTT_PORT   1883
 #define GROUP       "met"
 
@@ -20,14 +20,15 @@ const char *const WIFI_PASS = NULL;//"...";
 DomoticConnector *connector;
 WeatherShield weather;
 
-unsigned int retraso = 1000, acumulado;
+volatile unsigned int retraso = 1000;
+unsigned long acumulado;
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  retraso = 0;
-  for (int i=0;i<length;i++) retraso = retraso*10 + ((char)payload[i])-'0'; // atoi
+  unsigned int value = 0;
+  for (int i=0;i<length;i++) value = value*10 + ((char)payload[i])-'0'; // atoi
   
-  Serial.println("Retraso de " + String(retraso) + "s");
-  retraso = 1000*retraso;
+  Serial.println("Retraso de " + String(value) + "s");
+  retraso = 1000*value;
 }
 
 void onReconnect(void) {
@@ -52,8 +53,10 @@ void loop() {
   
   weather.loop();
 
-  if (millis() - acumulado < retraso) return;
-  acumulado = millis();
+  unsigned long current = millis();
+  if (current - acumulado < retraso) return;
+  acumulado = current;
+  Serial.println();
   
   //Check Humidity Sensor
   float humidity = weather.readHumidity();
@@ -75,7 +78,7 @@ void loop() {
     float pressure = weather.readPressure();
     Serial.print("Pressure = ");
     Serial.print(pressure);
-    Serial.println("Pa");
+    Serial.println("hPa");
     connector->publishSelf("central", "presion " + String(pressure));
 
     // light and battery doesn't use I2C, but if the I2C it's not working it's very likely (due to internal connections) that light nor battery will work
@@ -94,24 +97,23 @@ void loop() {
     // TODO enviar?
   }
   
-  float speed = weather.getWindSpeedKm();
-  Serial.print("Speed = ");
-  Serial.print(speed);
-  Serial.println("Km/h");
-  connector->publishSelf("central", "viento " + String(speed));
-  
-  int dir = weather.getWindDirection();
-  Serial.print("Direction = ");
-  Serial.println(dir);
-  connector->publishSelf("central", "direccion " + String(dir));
+  unsigned int dir = weather.getWindDirection();
+  if (weather.decodeWindDirection(dir) == -1) Serial.println("Unconnected external sensors.");
+  else {
+    Serial.print("Direction = ");
+    Serial.println(dir);
+    connector->publishSelf("central", "direccion " + String(dir));
+    
+    float speed = weather.getWindSpeedKm();
+    Serial.print("Speed = ");
+    Serial.print(speed);
+    Serial.println("Km/h");
+    connector->publishSelf("central", "viento " + String(speed));
+  }
   
   float rain = weather.getRain();
   Serial.print("Rain = ");
   Serial.print(rain);
   Serial.println("\"/s");
   connector->publishSelf("central", "agua " + String(rain));
-
-  Serial.println();
-
-  delay(1000);
 }
