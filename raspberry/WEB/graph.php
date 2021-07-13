@@ -48,24 +48,31 @@
             if ($conn->connect_error) {
                 die("Connection failed: " . $conn->connect_error);
             }
-            $sql = "SELECT Tipo FROM Tipos WHERE RoA='r' group by Tipo;";
+            $sql = "SELECT Tipo FROM Tipos WHERE RoA='r' GROUP BY Tipo;";
             $result = $conn->query($sql);
             if ($result->num_rows > 0) {
                 while($row = $result->fetch_assoc()) {
-					if($row["Tipo"] == "humedadPlanta1") echo "<option value='Humedad'>Humedad</option>";
-					else if($row["Tipo"] != "humedadPlanta2" && $row["Tipo"] != "humedadPlanta3" && $row["Tipo"] != "humedadPlanta4") echo "<option value='".ucfirst($row["Tipo"])."'>".ucfirst($row["Tipo"])."</option>";
-                    //array_push($ind, $row["Tipo"]);
+					if($row["Tipo"] == "humedadPlanta1") {
+						echo "<option value='Humedad'";
+						if ($_GET['g'] === 'Humedad') echo " selected";
+						echo ">Humedad</option>";
+					}
+					else if($row["Tipo"] != "humedadPlanta2" && $row["Tipo"] != "humedadPlanta3" && $row["Tipo"] != "humedadPlanta4") {
+						echo "<option value='".ucfirst($row["Tipo"])."'";
+						if ($_GET['g'] === ucfirst($row["Tipo"])) echo " selected";
+						echo ">".ucfirst($row["Tipo"])."</option>";
+					}
                 }
             }
         ?>
     </select>
 
     <select id="mySelectT" onchange="myFunction()">
-        <option value="" selected="selected" disabled="disabled">--Seleccione un periodo de tiempo--
-        <option value="s">60 s
-        <option value="m">60 min
-        <option value="h">24 h
-        <option value="d">30 d
+        <option value="" <?php if ($_GET['t'] !== 's' && $_GET['t'] !== 'm' && $_GET['t'] !== 'h' && $_GET['t'] !== 'd') echo 'selected'; ?> disabled="disabled">--Seleccione un periodo de tiempo--
+        <option value="s" <?php if ($_GET['t'] === 's') echo 'selected'; ?>>60 s
+        <option value="m" <?php if ($_GET['t'] === 'm') echo 'selected'; ?>>60 min
+        <option value="h" <?php if ($_GET['t'] === 'h') echo 'selected'; ?>>24 h
+        <option value="d" <?php if ($_GET['t'] === 'd') echo 'selected'; ?>>30 d
     </select>
     
     <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto; display: none;"></div>
