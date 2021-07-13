@@ -9,6 +9,7 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
+SET GLOBAL event_scheduler = ON; -- we use schedulers to update the values
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -242,6 +243,25 @@ BEGIN
     WHERE Tiempo='d';
 END;
 
+
+-- Schedulers
+DROP EVENT IF EXISTS updater;
+CREATE EVENT updater
+ON SCHEDULE EVERY 1 MINUTE STARTS '2021-07-13 00:00:00'
+DO BEGIN
+    CALL updateSeconds();
+    IF MINUTE(NOW()) = 0 THEN
+        CALL updateMinutes();
+
+        IF HOUR(NOW()) = 0 THEN
+            CALL updateHours();
+
+            IF DAY(NOW()) = 1 THEN
+                CALL updateDays();
+            END IF;
+        END IF;
+    END IF;
+END;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

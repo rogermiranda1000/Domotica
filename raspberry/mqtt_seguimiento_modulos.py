@@ -45,13 +45,6 @@ def database(obtener, sql):
 				db.commit()
 	except (mariadb.Error, mariadb.Warning) as e:
 		print(f"DB FAIL: {e}")
-		
-def tiempo(command):
-	print(f"Tiempo limite, actualizando...")
-	try:
-		database(False, f"CALL {command}();")
-	except (mariadb.Error, mariadb.Warning) as e:
-		print(f"DB load error: {e}")
 	
 def enviar(ID, tip, valu):
 	try:
@@ -327,22 +320,8 @@ if __name__ == '__main__':
 	client.on_connect = on_connect
 	client.on_message = on_message
 	client.connect(mqtt_ip, mqtt_port, 60)
-	client.loop_start()
+	client.loop_forever()
 
 	thr = threading.Thread(target=cam)
 	thr.daemon = True
 	thr.start()
-
-	while True:
-		# TODO update with timer
-		tiemp = datetime.datetime.now()
-		if tiemp.second == 0:
-			tiempo('updateSeconds')
-			if tiemp.minute == 0:
-				tiempo('updateMinutes')
-				if tiemp.hour == 0:
-					tiempo('updateHours')
-					if tiemp.day == 1:
-						tiempo('updateDays')
-		
-		time.sleep(1)
