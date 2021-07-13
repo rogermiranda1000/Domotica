@@ -21,7 +21,7 @@ DomoticConnector *connector;
 WeatherShield weather;
 
 volatile unsigned int retraso = 1000;
-unsigned int acumulado;
+unsigned long acumulado;
 
 void callback(char* topic, byte* payload, unsigned int length) {
   unsigned int value = 0;
@@ -53,8 +53,9 @@ void loop() {
   
   weather.loop();
 
-  if (millis() - acumulado < retraso) return;
-  acumulado = millis();
+  unsigned long current = millis();
+  if (current - acumulado < retraso) return;
+  acumulado = current;
   Serial.println();
   
   //Check Humidity Sensor
