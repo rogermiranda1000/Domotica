@@ -23,7 +23,6 @@
 				echo "<META HTTP-EQUIV=Refresh CONTENT='". $row["Valor"] . "'>";
 			}
 		}
-		$conn->close();
 	?>
 </head>
 <body>
@@ -32,18 +31,6 @@
 	</header>
 	
 	<?php
-		$servername = "localhost";
-		$username = "phpmyadmin";
-		$password = "pass";
-		$dbname = "Domotica";
-		
-		// Create connection
-		$conn = new mysqli($servername, $username, $password, $dbname);
-		// Check connection
-		if ($conn->connect_error) {
-			die("Connection failed: " . $conn->connect_error);
-		}
-		
 		$x = 0;
 		
 		$sql = "SELECT T.ind,T.Tipo,T.RoA,N.ID,N.Nombre FROM Tipos as T, Nombres as N WHERE T.ID=N.ID;";
@@ -400,11 +387,6 @@
 			window.history.pushState({path:newurl},'',newurl);
 			
 			<?php
-					$servername = "localhost";
-					$username = "phpmyadmin";
-					$password = "pass";
-					$dbname = "Domotica";
-
 					// Create connection
 					$conn = new mysqli($servername, $username, $password, $dbname);
 					// Check connection
@@ -433,11 +415,6 @@
 			window.history.pushState({path:newurl},'',newurl);
 			
 			<?php
-				$servername = "localhost";
-				$username = "phpmyadmin";
-				$password = "pass";
-				$dbname = "Domotica";
-
 				// Create connection
 				$conn = new mysqli($servername, $username, $password, $dbname);
 				// Check connection
@@ -462,11 +439,6 @@
 				var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?ID='+ID+'&stat='+btn+'&val='+document.getElementById(ID+btn[5]).checked;
 				window.history.pushState({path:newurl},'',newurl);
 				<?php
-					$servername = "localhost";
-					$username = "phpmyadmin";
-					$password = "pass";
-					$dbname = "Domotica";
-
 					// Create connection
 					$conn = new mysqli($servername, $username, $password, $dbname);
 					// Check connection
@@ -489,11 +461,6 @@
 				var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?ID='+ID+'&btn='+btn+'&'+btn+'='+document.getElementById(btn+ID).value;
 				window.history.pushState({path:newurl},'',newurl);
 				<?php
-					$servername = "localhost";
-					$username = "phpmyadmin";
-					$password = "pass";
-					$dbname = "Domotica";
-
 					// Create connection
 					$conn = new mysqli($servername, $username, $password, $dbname);
 					// Check connection
@@ -549,11 +516,6 @@
 			var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?ind='+ind+'&modo='+g;
 			window.history.pushState({path:newurl},'',newurl);
 			<?php
-				$servername = "localhost";
-				$username = "phpmyadmin";
-				$password = "pass";
-				$dbname = "Domotica";
-
 				// Create connection
 				$conn = new mysqli($servername, $username, $password, $dbname);
 				// Check connection
@@ -591,11 +553,6 @@
 				window.history.pushState({path:newurl},'',newurl);
 				<?php
 					if($_GET["color"]!="") {
-						$servername = "localhost";
-						$username = "phpmyadmin";
-						$password = "pass";
-						$dbname = "Domotica";
-						
 						// Create connection
 						$conn = new mysqli($servername, $username, $password, $dbname);
 						// Check connection
