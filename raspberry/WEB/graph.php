@@ -122,11 +122,13 @@
 						}
 					}
 					
-					$valores = substr($valores, 0, -2); // subtract last ', '
-					$json = "{ name: '".$nombre[$index];
-					if ($checking !== 'Val') $json .= " (".$checking.")";
-					$json .= "', data: [".$valores."] }";
-					array_push($TEXTO, $json);
+					if (strlen($valores) > 0) {
+						$valores = substr($valores, 0, -2); // subtract last ', '
+						$json = "{ name: '".$nombre[$index];
+						if ($checking !== 'Val') $json .= " (".$checking.")";
+						$json .= "', data: [".$valores."] }";
+						array_push($TEXTO, $json);
+					}
 				}
 			}
             $conn->close();
