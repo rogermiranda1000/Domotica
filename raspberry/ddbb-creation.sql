@@ -201,7 +201,7 @@ DROP PROCEDURE IF EXISTS updateGeneric;
 CREATE PROCEDURE updateGeneric (IN unit ENUM('s', 'm', 'h', 'd'), IN time TINYINT)
 BEGIN
     INSERT INTO Valor(ind, Tiempo, Time, Val, max, min)
-        SELECT ind, (unit+1), time, AVG(Val) AS mean, GREATEST(MAX(Val), COALESCE(max,0)), LEAST(Min(Val), COALESCE(min,0))
+        SELECT ind, (unit+1), time, AVG(Val) AS mean, GREATEST(MAX(Val), COALESCE(max,-2147483648)), LEAST(Min(Val), COALESCE(min,2147483647))
         FROM Valor
         WHERE Tiempo=unit
         GROUP BY ind;
