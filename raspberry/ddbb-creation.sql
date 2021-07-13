@@ -151,11 +151,12 @@ CREATE TABLE `RiegoHora` (
 --
 
 CREATE TABLE `Tipos` (
-  `ind` int(11) NOT NULL,
+  `ind` INTEGER NOT NULL AUTO_INCREMENT,
   `ID` tinytext NOT NULL,
   `Tipo` tinytext NOT NULL,
-  `RoA` ENUM('r', 'a') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `RoA` ENUM('r', 'a') NOT NULL,
+  PRIMARY KEY (ind)
+);
 
 -- --------------------------------------------------------
 
@@ -163,17 +164,19 @@ CREATE TABLE `Tipos` (
 -- Estructura de tabla para la tabla `Usuarios`
 --
 
+DROP TABLE IF EXISTS Usuarios;
 CREATE TABLE `Usuarios` (
-  `Nombre` tinytext NOT NULL,
-  `Pass` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `Nombre` VARCHAR(25) NOT NULL,
+  `Pass` CHAR(32) NOT NULL,
+  PRIMARY KEY (Nombre)
+);
 
 --
 -- Volcado de datos para la tabla `Usuarios`
 --
 
 INSERT INTO `Usuarios` (`Nombre`, `Pass`) VALUES
-('admin', '21232f297a57a5a743894a0e4a801fc3'); -- usuario admin, contraseña admin
+('admin', MD5('admin')); -- usuario admin, contraseña admin
 
 -- --------------------------------------------------------
 
@@ -181,33 +184,24 @@ INSERT INTO `Usuarios` (`Nombre`, `Pass`) VALUES
 -- Estructura de tabla para la tabla `Valor`
 --
 
-CREATE TABLE `Valor` (
+DROP TABLE IF EXISTS Valor;
+CREATE TABLE Valor (
   `ind` int(11) NOT NULL,
   `Tiempo` ENUM('s', 'm', 'h', 'd') NOT NULL,
   `Time` tinyint(4) NOT NULL,
-  `Val` int(11),
+  `Val` INTEGER,
+  `max` INTEGER,
+  `min` INTEGER,
   PRIMARY KEY (ind,Tiempo,`Time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Índices para tablas volcadas
---
-
---
--- Indices de la tabla `Tipos`
---
-ALTER TABLE `Tipos`
-  ADD PRIMARY KEY (`ind`),
-  ADD UNIQUE KEY `ind` (`ind`),
-  ADD KEY `ind_2` (`ind`);
+);
 
 
 -- Procedures
 DROP PROCEDURE IF EXISTS updateGeneric;
 CREATE PROCEDURE updateGeneric (IN unit ENUM('s', 'm', 'h', 'd'), IN time TINYINT)
 BEGIN
-    INSERT INTO Valor(ind, Tiempo, Time, Val)
-        SELECT ind, (unit+1), time, AVG(Val) AS mean
+    INSERT INTO Valor(ind, Tiempo, Time, Val, max, min)
+        SELECT ind, (unit+1), time, AVG(Val) AS mean, GREATEST(MAX(Val), COALESCE(max,-2147483648)), LEAST(Min(Val), COALESCE(min,2147483647))
         FROM Valor
         WHERE Tiempo=unit
         GROUP BY ind;
