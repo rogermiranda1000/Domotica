@@ -47,7 +47,7 @@ float MPL3115A2::readAltitudeFt()
   return(readAltitude() * 3.28084);
 }
 
-//Reads the current pressure in Pa
+//Reads the current pressure in hPa
 //Unit must be set in barometric pressure mode
 //Returns -1 if no new data is available
 float MPL3115A2::readPressure()
@@ -86,7 +86,7 @@ float MPL3115A2::readPressure()
 
 	float pressure = (float)pressure_whole + pressure_decimal;
 
-	return(pressure);
+	return (pressure/100);
 }
 
 float MPL3115A2::readTemp()

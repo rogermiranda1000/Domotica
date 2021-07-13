@@ -40,6 +40,7 @@ void WeatherShield::begin(bool use_leds) {
   this->_i2cPort->begin();
   
   // pressure sensor
+  this->_pressureSensor->setModeAltimeter();
   this->_pressureSensor->setModeBarometer(); // Measure pressure in Pascals from 20 to 110 kPa
   this->_pressureSensor->setOversampleRate(7); // Set Oversample to the recommended 128
   this->_pressureSensor->enableEventFlags(); // Enable all three pressure and temp event flags
