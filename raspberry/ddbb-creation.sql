@@ -221,19 +221,19 @@ END;
 DROP PROCEDURE IF EXISTS updateSeconds;
 CREATE PROCEDURE updateSeconds ()
 BEGIN
-    CALL updateGeneric('s', MINUTE( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous minute (not the current one)
+    CALL updateGeneric('s', MINUTE( DATE_ADD(LOCALTIMESTAMP(), INTERVAL -10 SECOND) )); -- the data it's from the previous minute (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateMinutes;
 CREATE PROCEDURE updateMinutes ()
 BEGIN
-    CALL updateGeneric('m', HOUR( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous hour (not the current one)
+        CALL updateGeneric('m', HOUR( DATE_ADD(LOCALTIMESTAMP(), INTERVAL -10 MINUTE) )); -- the data it's from the previous hour (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateHours;
 CREATE PROCEDURE updateHours ()
 BEGIN
-    CALL updateGeneric('h', DAY( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous day (not the current one)
+    CALL updateGeneric('h', DAY( DATE_ADD(LOCALTIMESTAMP(), INTERVAL -10 MINUTE) )); -- the data it's from the previous day (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateDays;
@@ -252,13 +252,13 @@ ON SCHEDULE EVERY 1 MINUTE STARTS '2021-07-13 00:00:00'
 DO BEGIN
     CALL updateSeconds();
 
-    IF MINUTE(NOW()) = 0 THEN
+    IF MINUTE(LOCALTIMESTAMP()) = 0 THEN
         CALL updateMinutes();
 
-        IF HOUR(NOW()) = 0 THEN
+        IF HOUR(LOCALTIMESTAMP()) = 0 THEN
             CALL updateHours();
 
-            IF DAY(NOW()) = 1 THEN
+            IF DAY(LOCALTIMESTAMP()) = 1 THEN
                 CALL updateDays();
             END IF;
         END IF;
