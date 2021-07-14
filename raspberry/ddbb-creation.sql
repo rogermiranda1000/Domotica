@@ -9,7 +9,6 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
-SET GLOBAL event_scheduler = ON; -- we use schedulers to update the values
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -107,18 +106,6 @@ CREATE TABLE `LED` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Nombres`
---
-
-CREATE TABLE `Nombres` (
-  `ID` tinytext NOT NULL,
-  `Nombre` tinytext NOT NULL,
-  `Tiempo` tinyint(4) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `Riego`
 --
 
@@ -150,31 +137,31 @@ CREATE TABLE `RiegoHora` (
 --
 -- Estructura de tabla para la tabla `Tipos`
 --
+DROP TABLE IF EXISTS Valor;
+DROP TABLE IF EXISTS Nombres;
 
-CREATE TABLE `Tipos` (
-  `ind` int(11) NOT NULL,
-  `ID` tinytext NOT NULL,
-  `Tipo` tinytext NOT NULL,
-  `RoA` ENUM('r', 'a') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS Tipos;
+CREATE TABLE Tipos (
+  ind INTEGER NOT NULL AUTO_INCREMENT,
+  ID VARCHAR(255) NOT NULL,
+  Tipo VARCHAR(45) NOT NULL,
+  RoA ENUM('r', 'a') NOT NULL,
+  PRIMARY KEY (ind)
+);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Usuarios`
+-- Estructura de tabla para la tabla `Nombres`
 --
 
-CREATE TABLE `Usuarios` (
-  `Nombre` tinytext NOT NULL,
-  `Pass` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Volcado de datos para la tabla `Usuarios`
---
-
-INSERT INTO `Usuarios` (`Nombre`, `Pass`) VALUES
-('admin', '21232f297a57a5a743894a0e4a801fc3'); -- usuario admin, contraseña admin
+CREATE TABLE Nombres (
+  ID VARCHAR(255) NOT NULL,
+  Nombre VARCHAR(45) NOT NULL,
+  Tiempo TINYINT NOT NULL,
+  PRIMARY KEY (ID)
+  -- -FOREIGN KEY (ID) REFERENCES Tipos(ID)
+);
 
 -- --------------------------------------------------------
 
@@ -182,33 +169,47 @@ INSERT INTO `Usuarios` (`Nombre`, `Pass`) VALUES
 -- Estructura de tabla para la tabla `Valor`
 --
 
-CREATE TABLE `Valor` (
-  `ind` int(11) NOT NULL,
+CREATE TABLE Valor (
+  `ind` INTEGER NOT NULL,
   `Tiempo` ENUM('s', 'm', 'h', 'd') NOT NULL,
   `Time` tinyint(4) NOT NULL,
-  `Val` int(11),
-  PRIMARY KEY (ind,Tiempo,`Time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `Val` INTEGER,
+  `max` INTEGER,
+  `min` INTEGER,
+  PRIMARY KEY (ind,Tiempo,`Time`),
+  FOREIGN KEY (ind) REFERENCES Tipos(ind)
+);
+
+-- --------------------------------------------------------
 
 --
--- Índices para tablas volcadas
+-- Estructura de tabla para la tabla `Usuarios`
 --
 
+DROP TABLE IF EXISTS Usuarios;
+CREATE TABLE `Usuarios` (
+  `Nombre` VARCHAR(25) NOT NULL,
+  `Pass` CHAR(32) NOT NULL,
+  PRIMARY KEY (Nombre)
+);
+
 --
--- Indices de la tabla `Tipos`
+-- Volcado de datos para la tabla `Usuarios`
 --
-ALTER TABLE `Tipos`
-  ADD PRIMARY KEY (`ind`),
-  ADD UNIQUE KEY `ind` (`ind`),
-  ADD KEY `ind_2` (`ind`);
+
+INSERT INTO `Usuarios` (`Nombre`, `Pass`) VALUES
+('admin', MD5('admin')); -- usuario admin, contraseña admin
+
+-- --------------------------------------------------------
+
 
 
 -- Procedures
 DROP PROCEDURE IF EXISTS updateGeneric;
 CREATE PROCEDURE updateGeneric (IN unit ENUM('s', 'm', 'h', 'd'), IN time TINYINT)
 BEGIN
-    INSERT INTO Valor(ind, Tiempo, Time, Val)
-        SELECT ind, (unit+1), time, AVG(Val) AS mean
+    INSERT INTO Valor(ind, Tiempo, Time, Val, max, min)
+        SELECT ind, (unit+1), time, AVG(Val) AS mean, GREATEST(MAX(Val), COALESCE(max,-2147483648)), LEAST(Min(Val), COALESCE(min,2147483647))
         FROM Valor
         WHERE Tiempo=unit
         GROUP BY ind;
@@ -220,19 +221,19 @@ END;
 DROP PROCEDURE IF EXISTS updateSeconds;
 CREATE PROCEDURE updateSeconds ()
 BEGIN
-    CALL updateGeneric('s', MINUTE(NOW()));
+    CALL updateGeneric('s', MINUTE( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous minute (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateMinutes;
 CREATE PROCEDURE updateMinutes ()
 BEGIN
-    CALL updateGeneric('m', HOUR(NOW()));
+    CALL updateGeneric('m', HOUR( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous hour (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateHours;
 CREATE PROCEDURE updateHours ()
 BEGIN
-    CALL updateGeneric('h', DAY(NOW()));
+    CALL updateGeneric('h', DAY( DATE_ADD(NOW(), INTERVAL -10 SECOND) )); -- the data it's from the previous day (not the current one)
 END;
 
 DROP PROCEDURE IF EXISTS updateDays;

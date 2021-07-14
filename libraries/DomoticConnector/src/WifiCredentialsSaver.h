@@ -2,12 +2,17 @@
 #define _WifiCredentialsSaver_h_
 
 #include "Arduino.h"
-#include <EEPROM.h>
 
 #ifdef ARDUINO_AVR_UNO_WIFI_REV2
 	#define EEPROM_LENGHT 256
+#elif defined(ARDUINO_ARDUINO_NANO33BLE)
+	#define EEPROM_LENGHT 0
 #else
 	#define EEPROM_LENGHT 512 // NodeMCU, entre otras muchas
+#endif
+
+#if EEPROM_LENGHT > 0
+	#include <EEPROM.h>
 #endif
 
 #define CREDENTIALS_LENGHT 50 // str size
