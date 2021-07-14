@@ -48,7 +48,14 @@
 				while ($row_data = $data_result->fetch_assoc()) {
 					if($row_data["RoA"]=='r' && ($row_data["Tipo"]!="humedadPlanta1" && $row_data["Tipo"]!="alarma")) {
 						// sensor
-						echo ucfirst($row_data["Tipo"]).": ".$row_data["LastValue"]."<br>";
+						$unidades = "";
+						if($row_data["Tipo"]==="temperatura") $unidades = '°C';
+						else if($row_data["Tipo"]==="humedad") $unidades = '%';
+						else if($row_data["Tipo"]==="presion") $unidades = 'hPa';
+						else if($row_data["Tipo"]==="luz") $unidades = '%';
+						else if($row_data["Tipo"]==="agua") $unidades = 'mm/h';
+						
+						echo ucfirst($row_data["Tipo"]).": ".$row_data["LastValue"].$unidades."<br>";
 					}
 					else {
 						if($row_data["Tipo"]=="enchufe") {
