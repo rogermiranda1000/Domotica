@@ -266,6 +266,9 @@ def fuego():
 		database(False, "UPDATE Alarma SET fuego=1 WHERE ind="+str(row[0])+";")
 
 def clima(rango, prob):
+	if city == None:
+		return True # TODO que significa el retorno de esta función?
+	
 	page = requests.get(city.read(), timeout = 15.0)
 	if page.status_code == 200:
 		tree = html.fromstring(page.content)
@@ -316,7 +319,10 @@ def foto(path):
 
 
 if __name__ == '__main__':
-	city = open("lluvia.txt","r")
+	try:
+		city = open("lluvia.txt","r")
+	except FileNotFoundError:
+		pass
 
 	if raspberryCam:
 		picx = picamera.PiCamera()
