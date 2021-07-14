@@ -237,19 +237,13 @@ def on_message(client, userdata, msg):
 		print(f"Nuevo tipo ({tipo}, de {prefix})")
 		mod_tip.append(prefix+" "+tipo)
 		try:
-			results = database(True, "SELECT MAX(ind) FROM Tipos")
-			val = results[0][0]
-			if val is None:
-				val = -1
-			val += 1
-			#print val
-			database(False, "INSERT INTO Tipos(ind,ID,Tipo,RoA) VALUES ("+str(val)+",\""+prefix+"\",\""+tipo+"\",\""+RoA+"\");")
+			database(False, "INSERT INTO Tipos(ID,Tipo,RoA) VALUES (\""+prefix+"\",\""+tipo+"\",\""+RoA+"\");")
 			if(tipo == "enchufe"):
-				database(False, "INSERT INTO Enchufes(ind,Status) VALUES ("+str(val)+",1);")
+				database(False, "INSERT INTO Enchufes(ind,Status) VALUES (LAST_INSERT_ID(),1);")
 			elif(tipo == "led"):
-				database(False, "INSERT INTO LED(ind,Status,R,G,B,W) VALUES ("+str(val)+",\"simp\",0,0,0,0);")
+				database(False, "INSERT INTO LED(ind,Status,R,G,B,W) VALUES (LAST_INSERT_ID(),\"simp\",0,0,0,0);")
 			elif(tipo == "alarma"):
-				database(False, "INSERT INTO Alarma(ind,maxVal,status) VALUES ("+str(val)+",600,0);")
+				database(False, "INSERT INTO Alarma(ind,maxVal,status) VALUES (LAST_INSERT_ID(),600,0);")
 		except (mariadb.Error, mariadb.Warning) as e:
 			print(f"DB load error: {e}")
 			
