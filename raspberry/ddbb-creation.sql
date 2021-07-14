@@ -156,11 +156,11 @@ CREATE TABLE Tipos (
 --
 
 CREATE TABLE Nombres (
-  ind INTEGER NOT NULL,
+  ID VARCHAR(255) NOT NULL,
   Nombre VARCHAR(45) NOT NULL,
   Tiempo TINYINT NOT NULL,
-  PRIMARY KEY (ind),
-  FOREIGN KEY (ind) REFERENCES Tipos(ind)
+  PRIMARY KEY (ID)
+  -- -FOREIGN KEY (ID) REFERENCES Tipos(ID)
 );
 
 -- --------------------------------------------------------
