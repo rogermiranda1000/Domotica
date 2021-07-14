@@ -171,18 +171,14 @@ CREATE TABLE Nombres (
 
 CREATE TABLE Valor (
   `ind` INTEGER NOT NULL,
-  `Tiempo` ENUM('s', 'm', 'h', 'd') NOT NULL,
-  `Time` tinyint(4) NOT NULL,
-  `Val` INTEGER,
-  `max` INTEGER,
-  `min` INTEGER,
-  PRIMARY KEY (ind,Tiempo,`Time`),
+  `Tiempo` ENUM('s', 'm', 'h', 'd') NOT NULL DEFAULT 's',
+  `Time` tinyint(4) NOT NULL DEFAULT SECOND(LOCALTIMESTAMP()),
+  `Val` FLOAT NOT NULL,
+  `max` FLOAT,
+  `min` FLOAT,
+  PRIMARY KEY (ind,Tiempo,Time),
   FOREIGN KEY (ind) REFERENCES Tipos(ind)
 );
-
--- Defaults
-ALTER TABLE Valor ALTER Tiempo SET DEFAULT 's';
-ALTER TABLE Valor ALTER Time SET DEFAULT SECOND(LOCALTIMESTAMP());
 
 -- --------------------------------------------------------
 
