@@ -6,6 +6,8 @@
 	#include <WiFiNINA.h>
 #elif defined(ARDUINO_ESP8266_NODEMCU_ESP12E)
 	#include <ESP8266WiFi.h>
+#elif defined(ARDUINO_ARDUINO_NANO33BLE)
+	#error "BLE sense is only for bluetooth!"
 #else
 	#error "This library was made for Lolin NodeMCU v3 or Arduino UNO Wifi Rev2"
 #endif
