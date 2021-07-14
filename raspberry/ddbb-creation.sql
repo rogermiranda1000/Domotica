@@ -106,18 +106,6 @@ CREATE TABLE `LED` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Nombres`
---
-
-CREATE TABLE `Nombres` (
-  `ID` tinytext NOT NULL,
-  `Nombre` tinytext NOT NULL,
-  `Tiempo` tinyint(4) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `Riego`
 --
 
@@ -149,13 +137,47 @@ CREATE TABLE `RiegoHora` (
 --
 -- Estructura de tabla para la tabla `Tipos`
 --
+DROP TABLE IF EXISTS Valor;
+DROP TABLE IF EXISTS Nombres;
 
-CREATE TABLE `Tipos` (
-  `ind` INTEGER NOT NULL AUTO_INCREMENT,
-  `ID` tinytext NOT NULL,
-  `Tipo` tinytext NOT NULL,
-  `RoA` ENUM('r', 'a') NOT NULL,
+DROP TABLE IF EXISTS Tipos;
+CREATE TABLE Tipos (
+  ind INTEGER NOT NULL AUTO_INCREMENT,
+  ID VARCHAR(255) NOT NULL,
+  Tipo VARCHAR(45) NOT NULL,
+  RoA ENUM('r', 'a') NOT NULL,
   PRIMARY KEY (ind)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `Nombres`
+--
+
+CREATE TABLE Nombres (
+  ID VARCHAR(255) NOT NULL,
+  Nombre VARCHAR(45) NOT NULL,
+  Tiempo TINYINT NOT NULL,
+  PRIMARY KEY (ID)
+  -- -FOREIGN KEY (ID) REFERENCES Tipos(ID)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `Valor`
+--
+
+CREATE TABLE Valor (
+  `ind` INTEGER NOT NULL,
+  `Tiempo` ENUM('s', 'm', 'h', 'd') NOT NULL,
+  `Time` tinyint(4) NOT NULL,
+  `Val` INTEGER,
+  `max` INTEGER,
+  `min` INTEGER,
+  PRIMARY KEY (ind,Tiempo,`Time`),
+  FOREIGN KEY (ind) REFERENCES Tipos(ind)
 );
 
 -- --------------------------------------------------------
@@ -180,20 +202,6 @@ INSERT INTO `Usuarios` (`Nombre`, `Pass`) VALUES
 
 -- --------------------------------------------------------
 
---
--- Estructura de tabla para la tabla `Valor`
---
-
-DROP TABLE IF EXISTS Valor;
-CREATE TABLE Valor (
-  `ind` int(11) NOT NULL,
-  `Tiempo` ENUM('s', 'm', 'h', 'd') NOT NULL,
-  `Time` tinyint(4) NOT NULL,
-  `Val` INTEGER,
-  `max` INTEGER,
-  `min` INTEGER,
-  PRIMARY KEY (ind,Tiempo,`Time`)
-);
 
 
 -- Procedures
