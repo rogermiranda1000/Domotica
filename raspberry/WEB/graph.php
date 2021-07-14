@@ -118,7 +118,7 @@
 					$result = $conn->query($sql);
 					if ($result->num_rows > 0) {
 						while($row = $result->fetch_assoc()) {
-							if ($row[$checking] !== NULL) $valores .= "[".$row["Time"].",".$row[$checking]."], ";
+							if ($row[$checking] !== NULL) $valores .= "[".$row["Time"].",". number_format((float)$row[$checking], 2, '.', '') ."], ";
 						}
 					}
 					
