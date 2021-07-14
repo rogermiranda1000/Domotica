@@ -180,6 +180,10 @@ CREATE TABLE Valor (
   FOREIGN KEY (ind) REFERENCES Tipos(ind)
 );
 
+-- Defaults
+ALTER TABLE Valor ALTER Tiempo SET DEFAULT 's';
+ALTER TABLE Valor ALTER Time SET DEFAULT SECOND(LOCALTIMESTAMP());
+
 -- --------------------------------------------------------
 
 --
