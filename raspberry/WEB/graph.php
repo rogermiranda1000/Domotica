@@ -86,6 +86,7 @@
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Presion") unidades = 'hPa';
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Luz") unidades = '%';
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Agua") unidades = 'mm/h';
+        else if(<?php echo "'".$_GET['g']."'"; ?>=="Viento") unidades = 'km/h';
         
         <?php
             $sql = "SELECT ind,ID FROM Tipos WHERE Tipo=\"".strtolower($_GET['g'])."\";";
