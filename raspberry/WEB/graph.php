@@ -57,7 +57,7 @@
 						if ($_GET['g'] === 'Humedad') echo " selected";
 						echo ">Humedad</option>";
 					}
-					else if($row["Tipo"] != "humedadPlanta2" && $row["Tipo"] != "humedadPlanta3" && $row["Tipo"] != "humedadPlanta4") {
+					else if($row["Tipo"] != "humedadPlanta2" && $row["Tipo"] != "humedadPlanta3" && $row["Tipo"] != "humedadPlanta4" && $row["Tipo"] != "direccion") {
 						echo "<option value='".ucfirst($row["Tipo"])."'";
 						if ($_GET['g'] === ucfirst($row["Tipo"])) echo " selected";
 						echo ">".ucfirst($row["Tipo"])."</option>";

@@ -54,8 +54,32 @@
 						else if($row_data["Tipo"]==="presion") $unidades = 'hPa';
 						else if($row_data["Tipo"]==="luz") $unidades = '%';
 						else if($row_data["Tipo"]==="agua") $unidades = 'mm/h';
+						else if($row_data["Tipo"]==="viento") $unidades = 'km/h';
+						// direccion no tiene unidades
 						
-						echo ucfirst($row_data["Tipo"]).": ".$row_data["LastValue"].$unidades."<br>";
+						$value = $row_data["LastValue"];
+						if ($row_data["Tipo"]==="direccion") {
+							// ADC to direction
+							if ($value < 380) $value = 113;
+							else if ($value < 393) $value = 68;
+							else if ($value < 414) $value = 90;
+							else if ($value < 456) $value = 158;
+							else if ($value < 508) $value = 135;
+							else if ($value < 551) $value = 203;
+							else if ($value < 615) $value = 180;
+							else if ($value < 680) $value = 23;
+							else if ($value < 746) $value = 45;
+							else if ($value < 801) $value = 248;
+							else if ($value < 833) $value = 225;
+							else if ($value < 878) $value = 338;
+							else if ($value < 913) $value = 0;
+							else if ($value < 940) $value = 293;
+							else if ($value < 967) $value = 315;
+							else if ($value < 990) $value = 270;
+							// en principio nunca saldrá de este rango (se comproba en el código de Arduino)
+						}
+						
+						echo ucfirst($row_data["Tipo"]).": ".$value.$unidades."<br>";
 					}
 					else {
 						if($row_data["Tipo"]=="enchufe") {
