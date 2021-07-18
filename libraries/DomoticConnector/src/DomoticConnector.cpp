@@ -1,6 +1,8 @@
 #include "DomoticConnector.h"
 
 bool DomoticConnector::_debug_mode;
+char *DomoticConnector::_ssid;
+char *DomoticConnector::_password;
 
 void DomoticConnector::conditionalPrintln(const char *str) {
 	if (DomoticConnector::_debug_mode) Serial.println(str);
@@ -43,18 +45,28 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 	WiFi.mode(WIFI_STA);
 	#endif
 
+	DomoticConnector::_ssid = NULL;
+	DomoticConnector::_password = NULL;
 	if (ssid != NULL && password != NULL) {
 		// credentials hardcoded
 		DomoticConnector::conditionalPrint("Wifi over constant: ");
 		DomoticConnector::conditionalPrintln(ssid);
-		WiFi.begin(ssid, password);
+		
+		DomoticConnector::_ssid = (char*)malloc(sizeof(char)*(strlen(ssid)+1));
+		strcpy(DomoticConnector::_ssid, ssid);
+		DomoticConnector::_password = (char*)malloc(sizeof(char)*(strlen(password)+1));
+		strcpy(DomoticConnector::_password, password);
 	}
 	else {
 		if (WifiSaver.readCredentials(&ssid, &password)) {
 			// credentials in EEPROM
 			DomoticConnector::conditionalPrint("Wifi over EEPROM: ");
 			DomoticConnector::conditionalPrintln(ssid);
-			WiFi.begin(ssid, password);
+		
+			DomoticConnector::_ssid = (char*)malloc(sizeof(char)*(strlen(ssid)+1));
+			strcpy(DomoticConnector::_ssid, ssid);
+			DomoticConnector::_password = (char*)malloc(sizeof(char)*(strlen(password)+1));
+			strcpy(DomoticConnector::_password, password);
 		}
 		else {
 			DomoticConnector::conditionalPrintln("EEPROM checksum is invalid");
@@ -64,7 +76,11 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 			if (file_name != NULL && DomoticConnector::getDataFromSD(sd_pin, file_name, &sd_ssid,&sd_password)) {
 				DomoticConnector::conditionalPrint("Wifi over SD: ");
 				DomoticConnector::conditionalPrintln(sd_ssid);
-				WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
+		
+				DomoticConnector::_ssid = (char*)malloc(sizeof(char)*(sd_ssid.length()+1));
+				sd_ssid.toCharArray(DomoticConnector::_ssid, (sd_ssid.length()+1));
+				DomoticConnector::_password = (char*)malloc(sizeof(char)*(sd_password.length()+1));
+				sd_password.toCharArray(DomoticConnector::_password, (sd_password.length()+1));
 			}
 			else DomoticConnector::conditionalPrintln("Unable to get credentials from SD");
 		}
@@ -191,7 +207,10 @@ bool DomoticConnector::getDataFromSD(byte sd_pin, char *file_name, String *ssid,
 }
 
 bool DomoticConnector::checkConnection() {
-	if (WiFi.status() != WL_CONNECTED) return false;
+	if (WiFi.status() != WL_CONNECTED) {
+		if (DomoticConnector::_ssid != NULL && DomoticConnector::_password != NULL) WiFi.begin(DomoticConnector::_ssid, DomoticConnector::_password);
+		return false;
+	}
 	if (this->_client->connected()) return true;
 	
 	// not connected
