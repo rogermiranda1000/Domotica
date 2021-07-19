@@ -5,7 +5,7 @@
 
 #ifdef ARDUINO_AVR_UNO_WIFI_REV2
 	#define EEPROM_LENGHT 256
-#elif defined(ARDUINO_ARDUINO_NANO33BLE)
+#elif defined(ARDUINO_ARDUINO_NANO33BLE) || defined(ARDUINO_SAMD_MKRWIFI1010)
 	#define EEPROM_LENGHT 0
 #else
 	#define EEPROM_LENGHT 512 // NodeMCU, entre otras muchas

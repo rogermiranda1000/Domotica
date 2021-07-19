@@ -2,10 +2,10 @@
 #define _DomoticConnector_h_
 
 #include "Arduino.h"
-#ifdef ARDUINO_AVR_UNO_WIFI_REV2
-	#include <WiFiNINA.h>
-#elif defined(ARDUINO_ESP8266_NODEMCU_ESP12E)
+#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	#include <ESP8266WiFi.h>
+#elif defined(ARDUINO_AVR_UNO_WIFI_REV2) || defined(ARDUINO_SAMD_MKRWIFI1010)
+	#include <WiFiNINA.h>
 #elif defined(ARDUINO_ARDUINO_NANO33BLE)
 	#error "BLE sense is only for bluetooth!"
 #else
