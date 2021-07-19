@@ -21,8 +21,14 @@
 // screen resolution
 #define RESOLUTION_X 240
 #define RESOLUTION_Y 240
-#define NUMPIXELS 5 // nº of RGB LEDs
+
+// LEDs
+#define NUMPIXELS 5
 #define RGB(R,G,B) carrier.leds.Color(G,R,B)
+
+// btn
+#define NUMBTN            5
+#define BOUNCE_GLITCH_MS  200
 
 const char *const WIFI_NAME = SECRET_SSID;
 const char *const WIFI_PASS = SECRET_PASS;
@@ -31,7 +37,7 @@ MKRIoTCarrier carrier;
 DomoticConnector *connector;
 
 volatile unsigned int retraso = 1000;
-unsigned long acumulado;
+unsigned long acumulado, lastTick[NUMBTN];
 
 void showScreen(char *origen, char *type, char *value);
 
@@ -63,11 +69,23 @@ void setup() {
   connector = new DomoticConnector(MQTT_SERVER, MQTT_PORT, GROUP, onReconnect, ID_SUBSCRIPTION, callback);
   
   acumulado = millis();
+  for (uint8_t n = 0; n < NUMBTN; n++) lastTick[n] = 0;
 }
 
 void loop() {
   connector->loop();
   // Arduino Wifi 1010 no tiene EEPROM
+  
+  carrier.Buttons.update();
+  for (uint8_t btn = 0; btn < NUMBTN; btn++) {
+    if (carrier.Buttons.onTouchDown((touchButtons)btn)) {
+      if (millis() - lastTick[btn] <= BOUNCE_GLITCH_MS) continue;
+      
+      lastTick[btn] = millis();
+      DEBUG_PRINTLN("Botón " + String(btn) + " pulsado");
+      connector->publish("central", connector->getStringID() + " btn " + connector->getStringID() + String(btn)); // el botón ID notifica que se ha pulsado, y que realize la acción 'ID0'
+    }
+  }
 
   unsigned long current = millis();
   if (current - acumulado < retraso) return;
