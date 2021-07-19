@@ -114,6 +114,6 @@ void loop() {
   float rain = weather.getRain();
   Serial.print("Rain = ");
   Serial.print(rain);
-  Serial.println("\"/s");
+  Serial.println("mm/h");
   connector->publishSelf("central", "agua " + String(rain));
 }

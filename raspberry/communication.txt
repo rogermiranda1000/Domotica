@@ -31,3 +31,27 @@ Envia:
 - "<ID> humedad <humedad>"
 Órdenes:
 - <delay> (establece cada cuantos ms se envian los datos)
+
+-- Módulo climático --
+Al conectarse:
+- "<ID> ?"
+Envia:
+- "<ID> luz <luz>"
+- "<ID> temperatura <temperatura>"
+- "<ID> humedad <humedad>"
+- "<ID> presion <presion>"
+- "<ID> direccion <direccion del viento [resistencia]>"
+- "<ID> viento <velocidad del viento>"
+- "<ID> agua <agua, en mm/h>"
+Órdenes:
+- <delay> (establece cada cuantos ms se envian los datos)
+
+-- Módulo informativo --
+Al conectarse:
+- "<ID> ?"
+Envia:
+- "<ID> temperatura <temperatura>"
+- "<ID> humedad <humedad>"
+- "<ID> presion <presion>"
+Órdenes:
+- <delay> (establece cada cuantos ms se envian los datos)

@@ -71,4 +71,16 @@ void loop() {
   DEBUG_PRINT(pressure);
   DEBUG_PRINTLN(" hPa");
   connector->publishSelf("central", "presion " + String(pressure));
+  
+  float temperature = carrier.Env.readTemperature();
+  DEBUG_PRINT("Temperature = ");
+  DEBUG_PRINT(temperature);
+  DEBUG_PRINTLN(" °C");
+  connector->publishSelf("central", "temperatura " + String(temperature));
+  
+  float humidity = carrier.Env.readHumidity();
+  DEBUG_PRINT("Humidity = ");
+  DEBUG_PRINT(humidity);
+  DEBUG_PRINTLN(" %");
+  connector->publishSelf("central", "humedad " + String(humidity));
 }
