@@ -2,7 +2,7 @@
 #include <DomoticConnector.h>
 #include "secrets.h" // place here #define SECRET_SSID & SECRET_PASS
 
-#define DEBUG 1
+#define DEBUG 0
 #if (DEBUG==1)
   #define DEBUG_PRINT(str) Serial.print(str)
   #define DEBUG_PRINTLN(str) Serial.println(str)
@@ -23,8 +23,10 @@
 #define RESOLUTION_Y 240
 
 // LEDs
-#define NUMPIXELS 5
-#define RGB(R,G,B) carrier.leds.Color(G,R,B)
+#define BLINK_MS_DELAY  10
+#define INTENSITY       0.7 // multiplicador de los LEDs TODO
+#define NUMPIXELS       5
+#define RGB(R,G,B)      ( carrier.leds.Color((uint8_t)(G/**INTENSITY*/),(uint8_t)(R/**INTENSITY*/),(uint8_t)(B/**INTENSITY*/)) )
 
 // btn
 #define NUMBTN            5
@@ -40,6 +42,9 @@ volatile unsigned int retraso = 1000;
 unsigned long acumulado, lastTick[NUMBTN];
 
 void showScreen(byte *msg, unsigned int length);
+void waiting();
+void connected();
+void unconnected();
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String cmd;
@@ -72,6 +77,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 void onReconnect(void) {
   connector->publishSelf("central", String(GROUP) + " ?");
+  connected();
 }
 
 void setup() {
@@ -94,8 +100,10 @@ void setup() {
 }
 
 void loop() {
-  connector->loop();
+  if (!connector->loop()) unconnected();
   // Arduino Wifi 1010 no tiene EEPROM
+
+  waiting(); // update LEDs (if needed)
   
   carrier.Buttons.update();
   for (uint8_t btn = 0; btn < NUMBTN; btn++) {
@@ -131,21 +139,14 @@ void loop() {
   DEBUG_PRINTLN(" %");
   connector->publishSelf("central", "humedad " + String(humidity));
 
-  /*int r, g, b, c, light_level;
-  carrier.Light.readColor(r, g, b);
-  light_level = carrier.Light.calculateLux(r,g,b);
-  DEBUG_PRINT("Light = ");
-  DEBUG_PRINT(light_level);
-  DEBUG_PRINTLN(" lumens/m^2");
-  connector->publishSelf("central", "luzSI " + String(light_level));*/
-
-  // show LEDs
-  /*carrier.leds.setPixelColor(0, RGB(255,0,0));
-  carrier.leds.setPixelColor(1, RGB(0,255,0));
-  carrier.leds.setPixelColor(2, RGB(0,0,255));
-  carrier.leds.setPixelColor(3, RGB(0,255,255));
-  carrier.leds.setPixelColor(4, RGB(255,0,255));
-  carrier.leds.show();*/
+  if (carrier.Light.colorAvailable()) {
+    int r, g, b, light_level;
+    carrier.Light.readColor(r, g, b, light_level);
+    DEBUG_PRINT("Light = ");
+    DEBUG_PRINT(light_level);
+    DEBUG_PRINTLN(" lumens/m^2");
+    connector->publishSelf("central", "luzSI " + String(light_level));
+  }
 }
 
 // ID/nombre, tipo de sensor, valor
@@ -156,4 +157,57 @@ void showScreen(char *msg, unsigned int length) {
   carrier.display.setTextSize(2);
   for (uint16_t n = 0; n < length; n++) carrier.display.print(msg[n]);
   carrier.display.println();
+}
+
+void showScreen(char *msg) {
+  carrier.display.setCursor(50, 50);
+  carrier.display.fillScreen(ST77XX_BLACK);
+  carrier.display.setTextColor(ST77XX_WHITE);
+  carrier.display.setTextSize(2);
+  carrier.display.println(msg);
+}
+
+static uint16_t state = 513;
+void waiting() {
+  if (state == 512) {
+    state = 0; // start again
+  }
+  else if (state == 513) {
+    // first loop
+    showScreen("Connecting...");
+    state = 0;
+  }
+  else if (state == 514) {
+    // turn off the screen & LEDs
+    for (uint8_t n = 0; n < NUMPIXELS; n++) carrier.leds.setPixelColor(n, RGB(0,0,0));
+    carrier.leds.show();
+    
+    carrier.display.fillScreen(ST77XX_BLACK);
+    state++;
+  }
+  else if (state != 515) {
+    if (state < 256) {
+      // dark to light
+      for (uint8_t n = 0; n < NUMPIXELS; n++) carrier.leds.setPixelColor(n, RGB(state,state,state));
+      carrier.leds.show();
+      delay(BLINK_MS_DELAY);
+      state++;
+    }
+    else {
+      // light to dark
+      for (uint8_t n = 0; n < NUMPIXELS; n++) carrier.leds.setPixelColor(n, RGB(256-(state-255),256-(state-255),256-(state-255))); // 256 -> 255; 257 -> 254...
+      carrier.leds.show();
+      delay(BLINK_MS_DELAY);
+      state++;
+    }
+  }
+}
+
+void connected() {
+  state = 514;
+}
+
+void unconnected() {
+  // IDLE states
+  if (state == 514 || state == 515) state = 513;
 }
