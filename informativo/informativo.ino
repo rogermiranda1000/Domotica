@@ -39,18 +39,39 @@ DomoticConnector *connector;
 volatile unsigned int retraso = 1000;
 unsigned long acumulado, lastTick[NUMBTN];
 
-void showScreen(char *origen, char *type, char *value);
+void showScreen(byte *msg);
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  unsigned int value = 0;
-  for (int i=0;i<length;i++) value = value*10 + ((char)payload[i])-'0'; // atoi
-  
-  Serial.println("Retraso de " + String(value) + "s");
-  retraso = 1000*value;
+  String cmd;
+
+  uint16_t n = 0;
+  while (n < length && (char)payload[n] != ' ') {
+    cmd += (char)payload[n];
+    n++;
+  }
+  n++; // skip ' '
+
+  if (cmd == String("delay")) {
+    unsigned int value = 0;
+    // atoi
+    while (n<length) {
+      value = value*10 + ((char)payload[n])-'0';
+      n++;
+    }
+
+    DEBUG_PRINT("Retraso de ");
+    DEBUG_PRINT(String(value));
+    DEBUG_PRINTLN("s");
+    retraso = 1000*value;
+  }
+  else if (cmd == String("set")) {
+    DEBUG_PRINTLN("Updating screen...");
+    showScreen((char*)(payload+n)); // espero que sizeof(char) == sizeof(byte)...
+  }
 }
 
 void onReconnect(void) {
-  connector->publishSelf("central", "?");
+  connector->publishSelf("central", String(GROUP) + " ?");
 }
 
 void setup() {
@@ -119,21 +140,19 @@ void loop() {
   connector->publishSelf("central", "luzSI " + String(light_level));*/
 
   // show LEDs
-  carrier.leds.setPixelColor(0, RGB(255,0,0));
+  /*carrier.leds.setPixelColor(0, RGB(255,0,0));
   carrier.leds.setPixelColor(1, RGB(0,255,0));
   carrier.leds.setPixelColor(2, RGB(0,0,255));
   carrier.leds.setPixelColor(3, RGB(0,255,255));
   carrier.leds.setPixelColor(4, RGB(255,0,255));
-  carrier.leds.show();
-
-  showScreen(NULL, NULL, NULL);
+  carrier.leds.show();*/
 }
 
 // ID/nombre, tipo de sensor, valor
-void showScreen(char *origen, char *type, char *value) {
-  carrier.display.setCursor(RESOLUTION_X/2, 10);
+void showScreen(char *msg) {
+  carrier.display.setCursor(/*RESOLUTION_X/2*/0, 10);
   carrier.display.fillScreen(ST77XX_BLACK);
   carrier.display.setTextColor(ST77XX_WHITE);
   carrier.display.setTextSize(2);
-  carrier.display.println("Hello World!");
+  carrier.display.println(msg);
 }

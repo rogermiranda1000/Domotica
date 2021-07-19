@@ -13,8 +13,6 @@ import paho.mqtt.publish as publish
 
 import mariadb
 
-import datetime
-
 raspberryCam = True
 try:
 	import picamera
@@ -64,8 +62,8 @@ def enviar(ID, tip, valu):
 	try:
 		with mariadb.connect(**sql_credentials) as connection:
 			cursor = connection.cursor(prepared=True)
-			cursor.execute("INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',%s,%s FROM Tipos as T WHERE T.ID=%s AND T.Tipo=%s AND T.RoA='r';",
-				(datetime.datetime.now().second, valu, ID, tip))
+			cursor.execute("INSERT INTO Valor(ind,Val) SELECT T.ind,%s FROM Tipos as T WHERE T.ID=%s AND T.Tipo=%s AND T.RoA='r';",
+				(valu, ID, tip))
 			
 			connection.commit()
 	except (mariadb.Error, mariadb.Warning) as e:
@@ -213,8 +211,8 @@ def on_message(client, userdata, msg):
 			#client.publish(prefix, "refresh."+last)
 			#print("Listo!")
 		return
-	elif tipo == "?":
-		retraso = 1
+	elif tipo == "?" or (tipo == "info" and mensaje == "?"):
+		retraso = 5
 		try:
 			results = database(True, "SELECT Tiempo FROM Nombres WHERE ID='"+prefix+"'")
 			for row in results:
@@ -222,8 +220,16 @@ def on_message(client, userdata, msg):
 		except:
 			print(f"DB load error")
 		print(f"Retraso de {prefix}: {str(retraso)}s")
-		client.publish(prefix, retraso)
+		if tipo == "info":
+			client.publish(prefix, "delay " + str(retraso))
+		else:
+			client.publish(prefix, retraso)
 		return
+		
+	# on button 'info <ID> <msg>'
+	elif tipo == "info":
+		text = ' '.join(msg[3:])
+		client.publish(mensaje, "set " + text)
 		
 	if prefix == "btn":
 		return
@@ -237,19 +243,13 @@ def on_message(client, userdata, msg):
 		print(f"Nuevo tipo ({tipo}, de {prefix})")
 		mod_tip.append(prefix+" "+tipo)
 		try:
-			results = database(True, "SELECT MAX(ind) FROM Tipos")
-			val = results[0][0]
-			if val is None:
-				val = -1
-			val += 1
-			#print val
-			database(False, "INSERT INTO Tipos(ind,ID,Tipo,RoA) VALUES ("+str(val)+",\""+prefix+"\",\""+tipo+"\",\""+RoA+"\");")
+			database(False, "INSERT INTO Tipos(ID,Tipo,RoA) VALUES (\""+prefix+"\",\""+tipo+"\",\""+RoA+"\");")
 			if(tipo == "enchufe"):
-				database(False, "INSERT INTO Enchufes(ind,Status) VALUES ("+str(val)+",1);")
+				database(False, "INSERT INTO Enchufes(ind,Status) VALUES (LAST_INSERT_ID(),1);")
 			elif(tipo == "led"):
-				database(False, "INSERT INTO LED(ind,Status,R,G,B,W) VALUES ("+str(val)+",\"simp\",0,0,0,0);")
+				database(False, "INSERT INTO LED(ind,Status,R,G,B,W) VALUES (LAST_INSERT_ID(),\"simp\",0,0,0,0);")
 			elif(tipo == "alarma"):
-				database(False, "INSERT INTO Alarma(ind,maxVal,status) VALUES ("+str(val)+",600,0);")
+				database(False, "INSERT INTO Alarma(ind,maxVal,status) VALUES (LAST_INSERT_ID(),600,0);")
 		except (mariadb.Error, mariadb.Warning) as e:
 			print(f"DB load error: {e}")
 			
@@ -266,6 +266,9 @@ def fuego():
 		database(False, "UPDATE Alarma SET fuego=1 WHERE ind="+str(row[0])+";")
 
 def clima(rango, prob):
+	if city == None:
+		return True # TODO que significa el retorno de esta función?
+	
 	page = requests.get(city.read(), timeout = 15.0)
 	if page.status_code == 200:
 		tree = html.fromstring(page.content)
@@ -316,7 +319,10 @@ def foto(path):
 
 
 if __name__ == '__main__':
-	city = open("lluvia.txt","r")
+	try:
+		city = open("lluvia.txt","r")
+	except FileNotFoundError:
+		pass
 
 	if raspberryCam:
 		picx = picamera.PiCamera()
