@@ -18,6 +18,12 @@
 #define SD_PIN      SD_CS
 #define FILE_NAME   "credentials.txt"
 
+// screen resolution
+#define RESOLUTION_X 240
+#define RESOLUTION_Y 240
+#define NUMPIXELS 5 // nº of RGB LEDs
+#define RGB(R,G,B) carrier.leds.Color(G,R,B)
+
 const char *const WIFI_NAME = SECRET_SSID;
 const char *const WIFI_PASS = SECRET_PASS;
 
@@ -26,6 +32,8 @@ DomoticConnector *connector;
 
 volatile unsigned int retraso = 1000;
 unsigned long acumulado;
+
+void showScreen(char *origen, char *type, char *value);
 
 void callback(char* topic, byte* payload, unsigned int length) {
   unsigned int value = 0;
@@ -83,4 +91,31 @@ void loop() {
   DEBUG_PRINT(humidity);
   DEBUG_PRINTLN(" %");
   connector->publishSelf("central", "humedad " + String(humidity));
+
+  /*int r, g, b, c, light_level;
+  carrier.Light.readColor(r, g, b);
+  light_level = carrier.Light.calculateLux(r,g,b);
+  DEBUG_PRINT("Light = ");
+  DEBUG_PRINT(light_level);
+  DEBUG_PRINTLN(" lumens/m^2");
+  connector->publishSelf("central", "luzSI " + String(light_level));*/
+
+  // show LEDs
+  carrier.leds.setPixelColor(0, RGB(255,0,0));
+  carrier.leds.setPixelColor(1, RGB(0,255,0));
+  carrier.leds.setPixelColor(2, RGB(0,0,255));
+  carrier.leds.setPixelColor(3, RGB(0,255,255));
+  carrier.leds.setPixelColor(4, RGB(255,0,255));
+  carrier.leds.show();
+
+  showScreen(NULL, NULL, NULL);
+}
+
+// ID/nombre, tipo de sensor, valor
+void showScreen(char *origen, char *type, char *value) {
+  carrier.display.setCursor(RESOLUTION_X/2, 10);
+  carrier.display.fillScreen(ST77XX_BLACK);
+  carrier.display.setTextColor(ST77XX_WHITE);
+  carrier.display.setTextSize(2);
+  carrier.display.println("Hello World!");
 }

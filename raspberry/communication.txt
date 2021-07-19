@@ -53,5 +53,6 @@ Envia:
 - "<ID> temperatura <temperatura>"
 - "<ID> humedad <humedad>"
 - "<ID> presion <presion>"
+- "<ID> luzSI <luz en lumens/m^2>"
 Órdenes:
 - <delay> (establece cada cuantos ms se envian los datos)
