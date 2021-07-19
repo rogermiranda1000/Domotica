@@ -39,7 +39,7 @@ DomoticConnector *connector;
 volatile unsigned int retraso = 1000;
 unsigned long acumulado, lastTick[NUMBTN];
 
-void showScreen(byte *msg);
+void showScreen(byte *msg, unsigned int length);
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String cmd;
@@ -66,7 +66,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   else if (cmd == String("set")) {
     DEBUG_PRINTLN("Updating screen...");
-    showScreen((char*)(payload+n)); // espero que sizeof(char) == sizeof(byte)...
+    showScreen((char*)(payload+n), length-n); // espero que sizeof(char) == sizeof(byte)...
   }
 }
 
@@ -149,10 +149,11 @@ void loop() {
 }
 
 // ID/nombre, tipo de sensor, valor
-void showScreen(char *msg) {
-  carrier.display.setCursor(/*RESOLUTION_X/2*/0, 10);
+void showScreen(char *msg, unsigned int length) {
+  carrier.display.setCursor(50, 50);
   carrier.display.fillScreen(ST77XX_BLACK);
   carrier.display.setTextColor(ST77XX_WHITE);
   carrier.display.setTextSize(2);
-  carrier.display.println(msg);
+  for (uint16_t n = 0; n < length; n++) carrier.display.print(msg[n]);
+  carrier.display.println();
 }
