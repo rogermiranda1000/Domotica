@@ -28,11 +28,10 @@ bool WifiCredentialsSaver::safeSetPassword(const char *pass) {
 }
 
 bool WifiCredentialsSaver::setSSID(const char *ssid) {
+#if EEPROM_LENGHT > 1
 	char last;
 	uint16_t n = 0;
 	byte checksum = 0;
-	
-	if (EEPROM_LENGHT < 2) return false;
 	
 	do {
 		if (n == EEPROM_LENGHT-1) return false; // we need to save the checksum
@@ -52,9 +51,14 @@ bool WifiCredentialsSaver::setSSID(const char *ssid) {
 	WifiCredentialsSaver::_passwordIndex = n+1; // n for checksum; n+1 for password
 	
 	return true;
+	
+#else
+	return false;
+#endif
 }
 
 bool WifiCredentialsSaver::setPassword(const char *pass) {
+#if EEPROM_LENGHT > 1
 	char last;
 	uint16_t n = WifiCredentialsSaver::_passwordIndex, aux = 0;
 	byte checksum = 0;
@@ -76,9 +80,14 @@ bool WifiCredentialsSaver::setPassword(const char *pass) {
 	#endif
 	
 	return true;
+	
+#else
+	return false;
+#endif
 }
 
 void WifiCredentialsSaver::emptyEEPROM(void) {
+#if EEPROM_LENGHT > 0
 	for (uint16_t n = 0; n < EEPROM_LENGHT; n++) EEPROM.write(n, 0x00);
 	
 	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
@@ -87,11 +96,11 @@ void WifiCredentialsSaver::emptyEEPROM(void) {
 	
 	WifiCredentialsSaver::_saved_ssid[0] = CREDENTIALS_DEFAULT;
 	WifiCredentialsSaver::_saved_pass[0] = CREDENTIALS_DEFAULT;
+#endif
 }
 
 bool WifiCredentialsSaver::readSSID(const char **ssid) {
-	if (EEPROM_LENGHT < 2) return false;
-	
+#if EEPROM_LENGHT > 1
 	if (WifiCredentialsSaver::_saved_ssid[0] == CREDENTIALS_DEFAULT) {
 		// not in cache, get it
 		uint16_t n = 0;
@@ -114,9 +123,14 @@ bool WifiCredentialsSaver::readSSID(const char **ssid) {
 	
 	*ssid = (const char*)WifiCredentialsSaver::_saved_ssid;
 	return true;
+	
+#else
+	return false;
+#endif
 }
 
 bool WifiCredentialsSaver::readPassword(const char **pass) {
+#if EEPROM_LENGHT > 1
 	if (WifiCredentialsSaver::_saved_pass[0] == CREDENTIALS_DEFAULT) {
 		// not in cache, get it
 		uint16_t n = WifiCredentialsSaver::_passwordIndex, aux = 0;
@@ -138,6 +152,10 @@ bool WifiCredentialsSaver::readPassword(const char **pass) {
 	
 	*pass = (const char*)WifiCredentialsSaver::_saved_pass;
 	return true;
+	
+#else
+	return false;
+#endif
 }
 
 bool WifiCredentialsSaver::readCredentials(const char **ssid, const char **pass) {
