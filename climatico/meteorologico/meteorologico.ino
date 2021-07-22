@@ -73,7 +73,7 @@ void loop() {
     
     float temp = weather.readTemperature();
     DEBUG_PRINT("Temp = ");
-    DEBUG_PRINT(temp, 2);
+    DEBUG_PRINT(temp);
     DEBUG_PRINTLN("C");
     connector->publishSelf("central", "temperatura " + String(temp));
 
