@@ -4,6 +4,7 @@ Description=Seguimiento de módulos de Domótica MQTT
 [Service]
 Type=simple
 ExecStart=/usr/bin/python3 /home/rogermiranda1000/Domotica/mqtt_seguimiento_modulos.py
+User=rogermiranda1000
 
 [Install]
 WantedBy=multi-user.target
