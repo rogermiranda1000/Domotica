@@ -2,14 +2,14 @@
 #define _DomoticConnector_h_
 
 #include "Arduino.h"
-#ifdef ARDUINO_AVR_UNO_WIFI_REV2
-	#include <WiFiNINA.h>
-#elif defined(ARDUINO_ESP8266_NODEMCU_ESP12E)
+#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	#include <ESP8266WiFi.h>
+#elif defined(ARDUINO_AVR_UNO_WIFI_REV2) || defined(ARDUINO_SAMD_MKRWIFI1010)
+	#include <WiFiNINA.h>
 #elif defined(ARDUINO_ARDUINO_NANO33BLE)
 	#error "BLE sense is only for bluetooth!"
 #else
-	#error "This library was made for Lolin NodeMCU v3 or Arduino UNO Wifi Rev2"
+	#error "This library was made for Lolin NodeMCU v3, Arduino UNO Wifi Rev2 or Arduino Wifi 1010"
 #endif
 #include <PubSubClient.h>
 
@@ -18,6 +18,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include "WifiCredentialsSaver.h"
+#include "BoardRestarter.h"
 
 // subscription types
 #define NO_SUBSCRIPTION 	(uint8_t)0
@@ -35,8 +36,8 @@ class DomoticConnector {
 	DomoticConnector(const char *ip, uint16_t port, const char *group) : DomoticConnector(ip, port, group, NULL, NO_SUBSCRIPTION, NULL) {}
 	~DomoticConnector(void);
 	
-	static void setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name);
-	static void setup(bool debug_mode, const char *ssid, const char *password);
+	static void setup(bool debug_mode, bool enableWDT, const char *ssid, const char *password, byte sd_pin, char *file_name);
+	static void setup(bool debug_mode, bool enableWDT, const char *ssid, const char *password);
 	
 	/**
 	* Llamar siempre que Serial.available()
