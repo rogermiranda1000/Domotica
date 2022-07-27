@@ -34,19 +34,22 @@ DomoticConnector::DomoticConnector(const char *ip, uint16_t port, const char *gr
 	if (callback != NULL) this->_client->setCallback(callback);
 }
 
-void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password, byte sd_pin, char *file_name) {
+void DomoticConnector::setup(bool debug_mode, bool enableWDT, const char *ssid, const char *password, byte sd_pin, char *file_name) {
 	DomoticConnector::_debug_mode = debug_mode;
 	
 	WifiSaver.setup();
 	
-	#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
+#ifdef ARDUINO_ESP8266_NODEMCU_ESP12E
 	WiFi.mode(WIFI_STA);
-	#endif
+#endif
+
+	if (enableWDT) WatchdogTimer.enableWatchdogTimer();
 
 	if (ssid != NULL && password != NULL) {
 		// credentials hardcoded
 		DomoticConnector::conditionalPrint("Wifi over constant: ");
 		DomoticConnector::conditionalPrintln(ssid);
+		
 		WiFi.begin(ssid, password);
 	}
 	else {
@@ -54,6 +57,7 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 			// credentials in EEPROM
 			DomoticConnector::conditionalPrint("Wifi over EEPROM: ");
 			DomoticConnector::conditionalPrintln(ssid);
+		
 			WiFi.begin(ssid, password);
 		}
 		else {
@@ -64,15 +68,16 @@ void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *pass
 			if (file_name != NULL && DomoticConnector::getDataFromSD(sd_pin, file_name, &sd_ssid,&sd_password)) {
 				DomoticConnector::conditionalPrint("Wifi over SD: ");
 				DomoticConnector::conditionalPrintln(sd_ssid);
-				WiFi.begin((const char*) sd_ssid.c_str(), (const char*) sd_password.c_str());
+		
+				WiFi.begin(sd_ssid.c_str(), sd_password.c_str());
 			}
 			else DomoticConnector::conditionalPrintln("Unable to get credentials from SD");
 		}
 	}
 }
 
-void DomoticConnector::setup(bool debug_mode, const char *ssid, const char *password) {
-	DomoticConnector::setup(debug_mode, ssid, password, (byte)-1, NULL);
+void DomoticConnector::setup(bool debug_mode, bool enableWDT, const char *ssid, const char *password) {
+	DomoticConnector::setup(debug_mode, enableWDT, ssid, password, (byte)-1, NULL);
 }
 
 bool DomoticConnector::eepromUpdate(String str) {
@@ -227,6 +232,7 @@ void DomoticConnector::publishSelf(const char *group, const char *msg) {
 bool DomoticConnector::loop(void) {
 	if (!this->checkConnection()) return false;
 	
+	WatchdogTimer.loop(); // reset the WDT
 	this->_client->loop();
 	return true;
 }

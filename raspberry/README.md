@@ -8,6 +8,6 @@ Se compone de una parte que controla la comunicación (MQTT, mediante Python), o
 - El módulo central necesita una IP estática (busca como configurarlo dependiendo de su sistema)
 
 ## Ejecutar automáticamente el .py en Ubuntu
-- Copiar 'mqtt_seguimiento_modulos.service' a la carpeta '/etc/systemd/system/'. Cambie la ruta de 'ExecStart' dependiendo de donde tenga el .py (para ver el directorio absouluto ejecutar 'pwd').<br/>
-- Ejecutar 'sudo chmod 644 /etc/systemd/system/mqtt_seguimiento_modulos.service'<br/>
-- Ejecutar 'sudo systemctl reenable mqtt_seguimiento_modulos.service'
+- Copiar 'mqtt_seguimiento_modulos.service' a la carpeta '/lib/systemd/system/'. Cambie la ruta de 'ExecStart' dependiendo de donde tenga el .py (para ver el directorio absouluto ejecutar 'pwd'), y el usuario 'User' donde se hayan instalado las librerias de Python.<br/>
+- Ejecutar 'sudo systemctl enable mqtt_seguimiento_modulos.service'<br/>
+- Ejecutar 'sudo systemctl start mqtt_seguimiento_modulos.service'

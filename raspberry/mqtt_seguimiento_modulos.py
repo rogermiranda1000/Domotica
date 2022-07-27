@@ -13,8 +13,6 @@ import paho.mqtt.publish as publish
 
 import mariadb
 
-import datetime
-
 raspberryCam = True
 try:
 	import picamera
@@ -64,8 +62,8 @@ def enviar(ID, tip, valu):
 	try:
 		with mariadb.connect(**sql_credentials) as connection:
 			cursor = connection.cursor(prepared=True)
-			cursor.execute("INSERT INTO Valor(ind,Tiempo,Time,Val) SELECT T.ind,'s',%s,%s FROM Tipos as T WHERE T.ID=%s AND T.Tipo=%s AND T.RoA='r';",
-				(datetime.datetime.now().second, valu, ID, tip))
+			cursor.execute("INSERT INTO Valor(ind,Val) SELECT T.ind,%s FROM Tipos as T WHERE T.ID=%s AND T.Tipo=%s AND T.RoA='r';",
+				(valu, ID, tip))
 			
 			connection.commit()
 	except (mariadb.Error, mariadb.Warning) as e:

@@ -57,7 +57,7 @@
 						if ($_GET['g'] === 'Humedad') echo " selected";
 						echo ">Humedad</option>";
 					}
-					else if($row["Tipo"] != "humedadPlanta2" && $row["Tipo"] != "humedadPlanta3" && $row["Tipo"] != "humedadPlanta4") {
+					else if($row["Tipo"] != "humedadPlanta2" && $row["Tipo"] != "humedadPlanta3" && $row["Tipo"] != "humedadPlanta4" && $row["Tipo"] != "direccion") {
 						echo "<option value='".ucfirst($row["Tipo"])."'";
 						if ($_GET['g'] === ucfirst($row["Tipo"])) echo " selected";
 						echo ">".ucfirst($row["Tipo"])."</option>";
@@ -86,6 +86,7 @@
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Presion") unidades = 'hPa';
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Luz") unidades = '%';
         else if(<?php echo "'".$_GET['g']."'"; ?>=="Agua") unidades = 'mm/h';
+        else if(<?php echo "'".$_GET['g']."'"; ?>=="Viento") unidades = 'km/h';
         
         <?php
             $sql = "SELECT ind,ID FROM Tipos WHERE Tipo=\"".strtolower($_GET['g'])."\";";
@@ -118,7 +119,7 @@
 					$result = $conn->query($sql);
 					if ($result->num_rows > 0) {
 						while($row = $result->fetch_assoc()) {
-							if ($row[$checking] !== NULL) $valores .= "[".$row["Time"].",".$row[$checking]."], ";
+							if ($row[$checking] !== NULL) $valores .= "[".$row["Time"].",". number_format((float)$row[$checking], 2, '.', '') ."], ";
 						}
 					}
 					
